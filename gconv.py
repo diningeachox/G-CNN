@@ -28,7 +28,7 @@ def group_element_inverse(matrix):
 #Custom forward and backward functions
 class GConvFunctions(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, input, filters, in_channels, out_channels, in_trans, out_trans, filter_size):
+    def forward(ctx, input, filters, in_channels, out_channels, in_trans, out_trans, filter_size, device='cpu'):
         #ctx.save_for_backward(input, filters)
 
         #Save dimensions to ctx
@@ -103,7 +103,7 @@ class GConvFunctions(torch.autograd.Function):
         return grad_input, grad_filters, None, None, None, None, None
 
 class GConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, filter_size=1, stride=1, in_transformations=1, out_transformations=4, group="p4"):
+    def __init__(self, in_channels, out_channels, filter_size=1, stride=1, in_transformations=1, out_transformations=4, group="p4", device='cpu'):
         super().__init__()
         #Filters stored as a K_l x K_{l-1} x S_{l_1} x n x n
         self.filters = torch.randn(out_channels, in_channels, in_transformations, filter_size, filter_size, device=device)

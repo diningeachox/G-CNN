@@ -15,27 +15,27 @@ class P4CNN(nn.Module):
     relu activation, bn, dropout, after layer 2
     max-pool after last layer
     '''
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, device="cpu"):
         super().__init__()
 
         self.features = nn.Sequential(
-                        GConv2d(in_channels, 10, filter_size=3),
-                        GConv2d(40, 10, filter_size=3, in_transformations=4),
+                        GConv2d(in_channels, 10, filter_size=3, device=device),
+                        GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GConv2d(10, 10, filter_size=3, in_transformations=4),
+                        GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GConv2d(10, 10, filter_size=3, in_transformations=4),
+                        GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GConv2d(10, 10, filter_size=3, in_transformations=4),
+                        GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GConv2d(10, 10, filter_size=3, in_transformations=4),
+                        GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GConv2d(10, 10, filter_size=4, in_transformations=4),
+                        GConv2d(10, 10, filter_size=4, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
                         GMaxPool2d()
