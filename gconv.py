@@ -38,7 +38,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
 
-        filters_transformed = gcnn_functions_cpp.transform_filter(out_channels, out_trans, in_channels, in_trans, filter_size, ind1, ind2, ind3, filters)
+        filters_transformed = gcnn_functions_cpp.transform_filter(out_channels, out_trans, in_channels, in_trans, filter_size, ind1, ind2, ind3, filters).to(device)
 
         #filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
@@ -177,9 +177,9 @@ class GConv2d(nn.Module):
 
 
         #Precompute lookup indices
-        self.ind1 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32)
-        self.ind2 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32)
-        self.ind3 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32)
+        self.ind1 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32).to(device)
+        self.ind2 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32).to(device)
+        self.ind3 = torch.zeros(size=(self.out_trans, self.in_trans, self.filter_size, self.filter_size), dtype=torch.int32).to(device)
         #self.indices = {}
 
         for s_prime, s, u, v in itertools.product(range(self.out_trans),
@@ -188,13 +188,10 @@ class GConv2d(nn.Module):
                                                         range(self.filter_size)):
             ref_prime = (s_prime > 3)
             ref = (s > 3)
-            #_s, _u, _v = group_element_inverse(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)) * group_element(s, u, v, m=ref))
+            _s, _u, _v = group_element_inverse(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)) * group_element(s, u, v, m=ref))
             #print(s_prime, u, v)
-            #first = gcnn_functions_cpp.group_element(s_prime, 0, 0, ref_prime)
-            #second = gcnn_functions_cpp.group_element(s, u, v, ref)
-            #_s, _u, _v = gcnn_functions_cpp.group_element_inverse(torch.inverse(first) * second)
 
-            _s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
+            #_s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
@@ -258,21 +255,17 @@ class GMaxPool2d(nn.Module):
 
 if __name__ == "__main__":
     #Test
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cpu'
     print(device)
     x = torch.randn(1, 3, 32, 32, requires_grad = True).to(device)
-    g_conv = GConv2d(3, 10, filter_size=3).to(device) #first layer with p4 group
+    g_conv = GConv2d(3, 10, filter_size=3, device=device).to(device) #first layer with p4 group
     g_pool = GMaxPool2d().to(device)
     optimizer = torch.optim.Adam(g_conv.parameters(), lr=1e-4)
 
     start = time.time()
     y = g_conv(x)
-
-    end = time.time()
-
-    print(y.shape)
     y = g_pool(y)
-    print(y.shape)
+    end = time.time()
 
     print(f"Forward time: {end - start} s")
 
