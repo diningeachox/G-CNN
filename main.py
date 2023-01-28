@@ -15,10 +15,12 @@ print(d)
 '''
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-net = P4CNN(3, device=device)
+print(device)
+net = P4CNN(3, device=device).to(device)
 
+
+a = torch.rand(1, 3, 224, 224).to(device)
 start = time()
-a = torch.rand(1, 3, 224, 224)
 b = net(a)
 end = time()
 print(f"Time elapsed: {end - start} s")

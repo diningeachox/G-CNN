@@ -1,0 +1,7 @@
+gcnn_cuda.cpp
+setup.py
+setup_cuda.py
+gcnn_cuda.egg-info/PKG-INFO
+gcnn_cuda.egg-info/SOURCES.txt
+gcnn_cuda.egg-info/dependency_links.txt
+gcnn_cuda.egg-info/top_level.txt
