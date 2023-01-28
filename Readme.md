@@ -2,17 +2,17 @@
 
 This project is a pytorch implementation of **Group-equivariant Convolutional Neural Networks** by Cohen and Welling[^1].
 We create custom G-convolutional layers and G-pooling layers for various noncommutative groups
-of interest, namely:
-
-p4 (translations and rotations of 90 degrees)
-p4m (translations and rotations of 90 degrees + reflections)
+of interest, namely:<br>
+<br>
+p4 (translations and rotations of 90 degrees)<br>
+p4m (translations and rotations of 90 degrees + reflections)<br>
 
 # Requirements
-python >= 3.7
-numpy
-pytorch >= 1.12.1
-CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)
-libtorch
+python >= 3.7<br>
+numpy<br>
+pytorch >= 1.12.1<br>
+CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
+libtorch<br>
 
 # Optimization using C++ and CUDA
 In the command line, use the following commands
