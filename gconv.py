@@ -6,6 +6,7 @@ import itertools
 import time
 
 import gcnn_functions_cpp #C++ functions
+import gcnn_cuda
 
 '''
     Converts a tuple (s, u, v) s - rotation, u - row, v - col, into a matrix group element

@@ -1,1 +1,5 @@
-/__pycache__
+__pycache__/
+build/
+dist/
+gcnn_cuda.egg-info/
+gcnn_functions_cpp.egg-info/

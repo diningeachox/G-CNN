@@ -1,4 +1,5 @@
 gcnn_cuda.cpp
+gcnn_cuda_kernel.cu
 setup.py
 setup_cuda.py
 gcnn_cuda.egg-info/PKG-INFO

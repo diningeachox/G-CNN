@@ -11,7 +11,7 @@ rule compile
 
 
 
-build C$:\Users\jackx\Documents\Machine$ Learning\G-CNN\build\temp.win-amd64-3.7\Release\gcnn_functions.obj: compile C$:\Users\jackx\Documents\Machine$ Learning\G-CNN\gcnn_functions.cpp
+build C$:\Users\jackx\Documents\GitHub\g-cnn\build\temp.win-amd64-3.7\Release\gcnn_functions.obj: compile C$:\Users\jackx\Documents\GitHub\g-cnn\gcnn_functions.cpp
 
 
 
