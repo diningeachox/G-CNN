@@ -51,8 +51,6 @@ torch::Tensor gcnn_cuda_forward(
     torch::Tensor filters_transformed) {
 
     //Allocate thread blocks
-    //const int threads = 1024;
-
     dim3 threads_per_block(16, 16);
     int blocks_x = (in_channels + threads_per_block.x - 1) / threads_per_block.x;
     int blocks_y = (out_channels + threads_per_block.y - 1) / threads_per_block.y;

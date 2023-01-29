@@ -1,6 +1,0 @@
-gcnn_functions.cpp
-setup.py
-gcnn_functions_cpp.egg-info/PKG-INFO
-gcnn_functions_cpp.egg-info/SOURCES.txt
-gcnn_functions_cpp.egg-info/dependency_links.txt
-gcnn_functions_cpp.egg-info/top_level.txt

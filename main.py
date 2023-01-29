@@ -14,12 +14,12 @@ d = unpickle('./cifar-10-batches-py/data_batch_1')
 print(d)
 '''
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = 'cpu'
 print(device)
 net = P4CNN(3, device=device).to(device)
 
 
-a = torch.rand(1, 3, 224, 224).to(device)
+a = torch.rand(1, 3, 32, 32).to(device)
 start = time()
 b = net(a)
 end = time()
