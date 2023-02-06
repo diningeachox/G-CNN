@@ -37,8 +37,9 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ctx.in_trans = in_trans
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
+        print(filters.shape)
 
-        filters_transformed = gcnn_cuda.forward(filters, in_channels, out_channels, in_trans, out_trans, filter_size, ind1, ind2, ind3)
+        filters_transformed = gcnn_cuda.forward(filters, in_channels, out_channels, in_trans, out_trans, filter_size, ind1, ind2, ind3).to(device)
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
         return F.conv2d(input, filters_transformed)
@@ -252,7 +253,11 @@ class GConv2d(nn.Module):
         self.register_parameter(name='filter', param=torch.nn.Parameter(self.filters).to(device))
 
     def forward(self, x):
-        return GConvFunctionsCpp.apply(x, self.filters,
+        if (self.device == 'cpu'):
+            func = GConvFunctionsCpp
+        else:
+            func = GConvFunctionsCUDA
+        return func.apply(x, self.filters,
                                        self.in_channels,
                                        self.out_channels,
                                        self.in_trans,
@@ -282,6 +287,7 @@ class GMaxPool2d(nn.Module):
         if self.group == "p4":
             #out = gcnn_functions_cpp.gmaxpool_forward(x)
 
+            #Parallelize this!!!!
             out = torch.zeros(x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3])
             for b, i, u, v in itertools.product(range(x.shape[0]),
                                                 range(out.shape[0]),
@@ -293,7 +299,7 @@ class GMaxPool2d(nn.Module):
 
 if __name__ == "__main__":
     #Test
-    device = 'cuda'
+    device = 'cpu'
     print(device)
     x = torch.randn(1, 3, 32, 32, requires_grad = True).to(device)
     g_conv = GConv2d(3, 10, filter_size=3, device=device).to(device) #first layer with p4 group

@@ -16,6 +16,10 @@ torch::Tensor gcnn_cuda_forward(
     torch::Tensor ind3,
     torch::Tensor filters_transformed);
 
+torch::Tensor gmaxpool_cuda_forward(
+    torch::Tensor input,
+    torch::Tensor output);
+
 // NOTE: TORCH_CHECK is used in the new versions of PyTorch
 #define CHECK_CUDA(x) TORCH_CHECK(x.is_cuda(), #x " must be a CUDA tensor")
 #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
@@ -45,7 +49,18 @@ torch::Tensor gcnn_forward(
     return gcnn_cuda_forward(filters, in_channels, out_channels, in_trans, out_trans, filter_size, ind1, ind2, ind3, filters_transformed);
 }
 
+torch::Tensor gmaxpool_forward(torch::Tensor input){
+    //Tensor to write new values to (also move the tensor to GPU)
+    torch::Tensor output = torch::zeros({input.size(0), input.size(1) / 4, input.size(2), input.size(3)}, torch::TensorOptions().device(torch::kCUDA));
+
+    //Check if input tensors are on the GPU
+    CHECK_INPUT(input);
+
+    return gmaxpool_cuda_forward(input, output);
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("forward", &gcnn_forward, "GCNN forward (CUDA)");
-  //m.def("backward", &gcnn_backward, "LLTM backward (CUDA)");
+    m.def("gmaxpool_forward", &gmaxpool_forward, "GMaxPool forward (CUDA)");
+    m.def("forward", &gcnn_forward, "GCNN forward (CUDA)");
+  //m.def("backward", &gcnn_backward, "GCNN backward (CUDA)");
 }

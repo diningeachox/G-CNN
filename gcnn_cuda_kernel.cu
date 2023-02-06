@@ -2,7 +2,8 @@
 
 #include <cuda.h>
 #include <cuda_runtime.h>
-
+#include <algorithm>
+#include <initializer_list>
 #include <vector>
 
 template <typename scalar_t>
@@ -36,7 +37,26 @@ __global__ void gcnn_cuda_forward_kernel(
       }
   }
 }
+
 } //namespace
+
+__global__ void gmaxpool_cuda_forward_kernel(
+    torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> input,
+    torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> output){
+
+    const int u = blockIdx.y * blockDim.y + threadIdx.y;
+    const int v = blockIdx.x * blockDim.x + threadIdx.x;
+    for (int b = 0; b < input.size(0); b++){
+        for (int i = 0; i < input.size(0); i++){
+
+            float m = std::max(input[b][i][u][v], input[b][i + output.size(0)][u][v]);
+            m = std::max(m, input[b][i + output.size(0) * 2][u][v]);
+            m = std::max(m, input[b][i + output.size(0) * 3][u][v]);
+            output[b][i][u][v] = m;
+
+        }
+    }
+}
 
 torch::Tensor gcnn_cuda_forward(
     torch::Tensor filters,
@@ -77,4 +97,18 @@ torch::Tensor gcnn_cuda_forward(
     */
 
     return filters_transformed;
+}
+
+torch::Tensor gmaxpool_cuda_forward(torch::Tensor input, torch::Tensor output){
+    //Allocate thread blocks
+    dim3 threads_per_block(16, 16);
+    int blocks_x = (input.size(3) + threads_per_block.x - 1) / threads_per_block.x;
+    int blocks_y = (input.size(2) + threads_per_block.y - 1) / threads_per_block.y;
+    const dim3 blocks(blocks_x, blocks_y);
+
+    gmaxpool_cuda_forward_kernel<<<blocks, threads_per_block>>>(
+        input.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
+        output.packed_accessor32<float,4,torch::RestrictPtrTraits>());
+
+    return output;
 }
