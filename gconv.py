@@ -37,7 +37,6 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ctx.in_trans = in_trans
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
-        print(filters.shape)
 
         filters_transformed = gcnn_cuda.forward(filters, in_channels, out_channels, in_trans, out_trans, filter_size, ind1, ind2, ind3).to(device)
 
@@ -195,7 +194,7 @@ class GConvFunctions(torch.autograd.Function):
 
         grad_input = torch.nn.grad.conv2d_input(input.shape, filters_transformed, grad_output)
         grad_filters_trans = torch.nn.grad.conv2d_weight(input, filters_transformed.shape, grad_output)
-        print(grad_filters_trans.shape)
+        #print(grad_filters_trans.shape)
         #grad_output.backward(filters)
         for i, s_prime, j, s, u, v in itertools.product(range(ctx.out_channels),
                                                         range(ctx.out_trans),
@@ -276,34 +275,35 @@ H = The 4 rotations around the origin if G = p4
 
 '''
 class GMaxPool2d(nn.Module):
-    def __init__(self, group="p4"):
+    def __init__(self, group="p4", device="cpu"):
         super().__init__()
         self.group = group
+        self.device = device
 
     def forward(self, x):
         # x is of shape [channels x |H|, width, height]
         # out should be of shape [channels, width, height]
 
         if self.group == "p4":
-            #out = gcnn_functions_cpp.gmaxpool_forward(x)
-
-            #Parallelize this!!!!
-            out = torch.zeros(x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3])
-            for b, i, u, v in itertools.product(range(x.shape[0]),
-                                                range(out.shape[0]),
-                                                range(x.shape[2]),
-                                                range(x.shape[3])):
-                out[b, i, u, v] = max(x[b, i, u, v], x[b, i + out.shape[0], u, v], x[b, i + out.shape[0] * 2, u, v], x[b, i + out.shape[0] * 3, u, v])
-
+            if (self.device == "cuda"):
+                out = gcnn_functions_cpp.gmaxpool_forward(x)
+                out.requires_grad_(True)
+            else:
+                out = torch.zeros(x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3])
+                for b, i, u, v in itertools.product(range(x.shape[0]),
+                                                    range(out.shape[0]),
+                                                    range(x.shape[2]),
+                                                    range(x.shape[3])):
+                    out[b, i, u, v] = max(x[b, i, u, v], x[b, i + out.shape[0], u, v], x[b, i + out.shape[0] * 2, u, v], x[b, i + out.shape[0] * 3, u, v])
         return out
 
 if __name__ == "__main__":
     #Test
-    device = 'cpu'
+    device = 'cuda'
     print(device)
     x = torch.randn(1, 3, 32, 32, requires_grad = True).to(device)
     g_conv = GConv2d(3, 10, filter_size=3, device=device).to(device) #first layer with p4 group
-    g_pool = GMaxPool2d().to(device)
+    g_pool = GMaxPool2d(device=device).to(device)
     optimizer = torch.optim.Adam(g_conv.parameters(), lr=1e-4)
 
     start = time.time()
@@ -317,7 +317,6 @@ if __name__ == "__main__":
     loss = nn.MSELoss()(y, target)
 
 
-    print(loss.item())
     start = time.time()
     loss.backward()
     end = time.time()

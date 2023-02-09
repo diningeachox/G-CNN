@@ -51,7 +51,7 @@ torch::Tensor gcnn_forward(
 
 torch::Tensor gmaxpool_forward(torch::Tensor input){
     //Tensor to write new values to (also move the tensor to GPU)
-    torch::Tensor output = torch::zeros({input.size(0), input.size(1) / 4, input.size(2), input.size(3)}, torch::TensorOptions().device(torch::kCUDA));
+    torch::Tensor output = torch::zeros({input.size(0), input.size(1) / 4, input.size(2), input.size(3)}, torch::TensorOptions().device(torch::kCUDA).requires_grad(true));
 
     //Check if input tensors are on the GPU
     CHECK_INPUT(input);

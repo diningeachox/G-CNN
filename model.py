@@ -38,7 +38,7 @@ class P4CNN(nn.Module):
                         GConv2d(10, 10, filter_size=4, in_transformations=4, device=device),
                         nn.BatchNorm2d(40),
                         nn.ReLU(),
-                        GMaxPool2d()
+                        GMaxPool2d(device=device).to(device)
                         )
 
     def forward(self, x):
