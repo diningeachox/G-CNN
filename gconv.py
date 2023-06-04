@@ -5,8 +5,8 @@ import math
 import itertools
 import time
 
-import gcnn_functions_cpp #C++ functions
-import gcnn_cuda
+import gcnn_functions_cpp # C++ functions
+import gcnn_cuda # CUDA functions
 
 '''
     Converts a tuple (s, u, v) s - rotation, u - row, v - col, into a matrix group element
@@ -37,6 +37,7 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ctx.in_trans = in_trans
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
+        ctx.device = device
 
         filters_transformed = gcnn_cuda.forward(filters, in_channels, out_channels, in_trans, out_trans, filter_size, ind1, ind2, ind3).to(device)
 
@@ -59,11 +60,14 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         '''
 
         grad_input = None
-        grad_filters = torch.zeros_like(filters)
+        #grad_filters = torch.zeros_like(filters)
 
         grad_input = torch.nn.grad.conv2d_input(input.shape, filters_transformed, grad_output)
         grad_filters_trans = torch.nn.grad.conv2d_weight(input, filters_transformed.shape, grad_output)
+
+        grad_filters = gcnn_cuda.backward(ctx.out_channels, ctx.out_trans, ctx.in_channels, ctx.in_trans, ctx.filter_size, ind1, ind2, ind3, grad_filters_trans).to(device)
         #grad_output.backward(filters)
+        '''
         for i, s_prime, j, s, u, v in itertools.product(range(ctx.out_channels),
                                                         range(ctx.out_trans),
                                                         range(ctx.in_channels),
@@ -78,7 +82,7 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             _v = ind3[s_prime, s, u, v].item()
             #Update grad_filters according to grad_output
             grad_filters[i, j, _s, _u, _v] += grad_filters_trans[i * ctx.out_trans + s_prime, j * ctx.in_trans + s, u, v]
-
+        '''
 
         #11 parameters in forward() so need to pad the number of fields returned
         return grad_input, grad_filters, None, None, None, None, None, None, None, None, None
@@ -93,6 +97,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
         ctx.in_trans = in_trans
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
+        ctx.device = device
 
         filters_transformed = gcnn_functions_cpp.transform_filter(out_channels, out_trans, in_channels, in_trans, filter_size, ind1, ind2, ind3, filters).to(device)
 
@@ -116,25 +121,11 @@ class GConvFunctionsCpp(torch.autograd.Function):
         '''
 
         grad_input = None
-        grad_filters = torch.zeros_like(filters)
 
         grad_input = torch.nn.grad.conv2d_input(input.shape, filters_transformed, grad_output)
         grad_filters_trans = torch.nn.grad.conv2d_weight(input, filters_transformed.shape, grad_output)
-        #grad_output.backward(filters)
-        for i, s_prime, j, s, u, v in itertools.product(range(ctx.out_channels),
-                                                        range(ctx.out_trans),
-                                                        range(ctx.in_channels),
-                                                        range(ctx.in_trans),
-                                                        range(ctx.filter_size),
-                                                        range(ctx.filter_size)):
-            #ref_prime = (s_prime > 3)
-            #ref = (s > 3)
-            #_s, _u, _v = group_element_inverse(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)) * group_element(s, u, v, m=ref))
-            _s = ind1[s_prime, s, u, v].item()
-            _u = ind2[s_prime, s, u, v].item()
-            _v = ind3[s_prime, s, u, v].item()
-            #Update grad_filters according to grad_output
-            grad_filters[i, j, _s, _u, _v] += grad_filters_trans[i * ctx.out_trans + s_prime, j * ctx.in_trans + s, u, v]
+
+        grad_filters = gcnn_functions_cpp.gcnn_backward(ctx.out_channels, ctx.out_trans, ctx.in_channels, ctx.in_trans, ctx.filter_size, ind1, ind2, ind3, grad_filters_trans).to(ctx.device)
 
         #11 parameters in forward() so need to pad the number of fields returned
         return grad_input, grad_filters, None, None, None, None, None, None, None, None, None
@@ -301,7 +292,7 @@ if __name__ == "__main__":
     #Test
     device = 'cuda'
     print(device)
-    x = torch.randn(1, 3, 32, 32, requires_grad = True).to(device)
+    x = torch.randn(1, 3, 32, 32, requires_grad=True).to(device)
     g_conv = GConv2d(3, 10, filter_size=3, device=device).to(device) #first layer with p4 group
     g_pool = GMaxPool2d(device=device).to(device)
     optimizer = torch.optim.Adam(g_conv.parameters(), lr=1e-4)

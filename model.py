@@ -9,7 +9,7 @@ In this file we implement some G-equivariant CNNs
 
 class P4CNN(nn.Module):
     '''
-    G-equivariant CNN with G = p4
+    G-equivariant CNN with G = p4 (The 4 90-degree rotations)
 
     6 3x3 conv layers, followed by 4x4 conv layer (10 channels each layer)
     relu activation, bn, dropout, after layer 2

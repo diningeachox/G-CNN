@@ -111,16 +111,33 @@ torch::Tensor gcnn_pool_forward(torch::Tensor x) {
 
 }
 
-std::vector<at::Tensor> gcnn_backward(
-    torch::Tensor grad_output,
-    torch::Tensor input,
-    torch::Tensor filters,
-    torch::Tensor filters_transformed,
+torch::Tensor gcnn_backward(
+    int out_channels, int out_trans, int in_channels, int in_trans, int filter_size,
     torch::Tensor ind1,
     torch::Tensor ind2,
-    torch::Tensor ind3
+    torch::Tensor ind3,
+    torch::Tensor grad_filters_trans
 ){
-    return {};
+    torch::Tensor grad_filters = torch::zeros({out_channels, in_channels, in_trans, filter_size, filter_size});
+
+    for (int i = 0; i < out_channels; i++){
+        for (int j = 0; j < in_channels; j++){
+            for (int s_prime = 0; s_prime < out_trans; s_prime++){
+                for (int s = 0; s < in_trans; s++){
+                    for (int u = 0; u < filter_size; u++){
+                        for (int v = 0; v < filter_size; v++){
+
+                            int _s = ind1[s_prime][s][u][v].item<int>();
+                            int _u = ind2[s_prime][s][u][v].item<int>();
+                            int _v = ind3[s_prime][s][u][v].item<int>();
+                            grad_filters[i][j][_s][_u][_v] = grad_filters_trans[i * out_trans + s_prime][j * in_trans + s][u][v];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return grad_filters;
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
@@ -130,5 +147,5 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   //m.def("group_element", &gcnn_group_element, "GCNN group element");
   //m.def("group_element_inverse", &gcnn_group_element_inverse, "GCNN group element inverse");
   //m.def("forward", &gcnn_forward, "GCNN forward");
-  m.def("backward", &gcnn_backward, "GCNN backward");
+  m.def("gcnn_backward", &gcnn_backward, "GCNN backward");
 }
