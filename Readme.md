@@ -18,8 +18,8 @@ libtorch<br>
 Before running the code it is recommended to install the C++/CUDA optimization modules.
 
 In the command line, use the following commands <br>
-`py setup.py install #C++ extensions`<br>
-`py setup_cuda.py install #CUDA extensions`
+`py setup.py install` (C++ extensions) <br>
+`py setup_cuda.py install` (CUDA extensions)
 
 These will install the corresponding C++/CUDA functions instead of the native pytorch functions used for forward() and backward() functions in the GCNN models.
 
