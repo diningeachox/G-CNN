@@ -21,5 +21,17 @@ In the command line, use the following commands <br>
 
 These will install the corresponding C++/CUDA functions instead of the native pytorch functions used for forward() and backward() functions in the GCNN models.
 
+# Usage
+The main code is in `main.py`, where a P4CNN model is initialized and a sample input is passed through and backpropagated once. To run the code, use: <br>
+`py -m main` <br>
+To use CUDA accelerated forward() and backward(), use <br>
+`py -m main --gpu`
+
+# Task List
+* [x] Optimization using C++/CUDA
+* [ ] Dataloader with rotations and reflections support
+* [ ] Unit tests
+* [ ] Train the G-CNN models
+* [ ] Benchmark results
 ----
 [^1]: Taco S. Cohen, Max Welling **Group Equivariant Convolutional Networks** (2016)
