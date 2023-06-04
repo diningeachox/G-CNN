@@ -80,9 +80,7 @@ class CIFARDataset(Dataset):
 
         return img, label
 
-
-#Some data exploration and visualization
-if __name__ == "__main__":
+def get_datasets():
     mean = [0.5, 0.5, 0.5]
     std = [0.5, 0.5, 0.5]
 
@@ -109,11 +107,16 @@ if __name__ == "__main__":
 
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
+    return trainloader, testloader
 
+#Some data exploration and visualization
+if __name__ == "__main__":
+    trainloader, testloader = get_datasets()
 
     it = iter(trainloader)
     data = next(it)
 
+    print(data[0].shape)
     fig, ax = plt.subplots()
     im = ax.imshow(data[0][0].permute(1, 2, 0))
     plt.show()
