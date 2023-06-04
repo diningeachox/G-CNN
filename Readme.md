@@ -15,7 +15,7 @@ CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
 libtorch<br>
 
 # Optimization using C++ and CUDA
-In the command line, use the following commands
+In the command line, use the following commands <br>
 `py setup.py install #C++ extensions`<br>
 `py setup_cuda.py install #CUDA extensions`
 
