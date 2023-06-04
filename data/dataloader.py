@@ -34,7 +34,7 @@ def unpickle(file):
 
 
 class CIFARDataset(Dataset):
-    def __init__(self, batch=1, transform=None):
+    def __init__(self, batch=1, transform=None, rot=True, ref=False):
         data_file = ""
         if (batch > 0):
             data_file = f"data/cifar-10/data_batch_{batch}"
@@ -52,15 +52,17 @@ class CIFARDataset(Dataset):
 
         #Add transformations for test batch
         if batch == 0:
-            for i in range(1, 4):
-                rotated_images = np.rot90(images, i, (2, 3))
-                self.images = np.concatenate((self.images, rotated_images), axis=0)
+            if rot==True:
+                for i in range(1, 4):
+                    rotated_images = np.rot90(images, i, (2, 3))
+                    self.images = np.concatenate((self.images, rotated_images), axis=0)
             # Reflection across y axis
-            flipped_images = np.flip(images, 3)
-            self.images = np.concatenate((self.images, flipped_images), axis=0)
-            # Reflection across x axis
-            flipped_images = np.flip(images, 2)
-            self.images = np.concatenate((self.images, flipped_images), axis=0)
+            if ref==True:
+                flipped_images = np.flip(images, 3)
+                self.images = np.concatenate((self.images, flipped_images), axis=0)
+                # Reflection across x axis
+                flipped_images = np.flip(images, 2)
+                self.images = np.concatenate((self.images, flipped_images), axis=0)
         print(self.images.shape)
 
     def __len__(self):
@@ -83,7 +85,6 @@ class CIFARDataset(Dataset):
 if __name__ == "__main__":
     mean = [0.5, 0.5, 0.5]
     std = [0.5, 0.5, 0.5]
-
 
     #Transforms for data augmentation
     train_transforms = transforms.Compose([

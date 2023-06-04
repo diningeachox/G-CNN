@@ -30,7 +30,7 @@ To use CUDA accelerated forward() and backward(), use <br>
 
 # Task List
 * [x] Optimization using C++/CUDA
-* [ ] Dataloader with rotations and reflections support
+* [x] Dataloader with rotations and reflections support
 * [ ] Unit tests
 * [ ] Train the G-CNN models
 * [ ] Benchmark results
