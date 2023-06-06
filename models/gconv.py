@@ -128,20 +128,6 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             grad_filters_trans,
         )
 
-        '''
-        grad_filters = gcnn_functions_cpp.gcnn_backward(
-            ctx.out_channels,
-            ctx.out_trans,
-            ctx.in_channels,
-            ctx.in_trans,
-            ctx.filter_size,
-            ind1,
-            ind2,
-            ind3,
-            grad_filters_trans,
-        ).to(ctx.device)
-        '''
-
         # 11 parameters in forward() so need to pad the number of fields returned
         return (
             grad_input,
@@ -470,21 +456,6 @@ class GConv2d(nn.Module):
             self.device,
         )
 
-class GMaxPoolFunctions(torch.autograd.Function):
-    @staticmethod
-    def forward(
-        ctx,
-        input,
-        device,
-    ):
-        output = gcnn_cuda.gmaxpool_forward(x)
-        ctx.save_for_backward(output)
-        return output
-
-    @staticmethod
-    def backward(ctx, grad_output):
-
-        pass
 
 """
 Here we implement coset pooling over H and subsample over cosets gH, where

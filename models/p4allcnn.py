@@ -53,7 +53,6 @@ class P4AllCNN(nn.Module):
     def forward(self, x):
         x = self.features(x)
         x = nn.AvgPool2d(kernel_size=8)(x)
-        print(x.shape)
         x = torch.reshape(x, (x.shape[0], x.shape[1]))
         x = self.fc(x)
         return x

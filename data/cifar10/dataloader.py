@@ -31,32 +31,14 @@ def unpickle(file):
         dict = pickle.load(fo, encoding='bytes')
     return dict
 
-class RMNISTDataset(Dataset):
-    def __init__(self, batch=1, transform=None, rot=True, ref=False):
-        pass
-
-    def __len__(self):
-        return self.images.shape[0]
-
-    def __getitem__(self, idx):
-
-        img = self.images[idx]
-        label = self.labels[idx]
-
-        #Apply transforms
-        if self.transform:
-            img_transpose = np.transpose(img, (1,2,0)) #Transform np array to the format H x W x C
-            img = self.transform(img_transpose)
-
-        return img, label
 
 class CIFARDataset(Dataset):
     def __init__(self, batch=1, transform=None, rot=True, ref=False):
         data_file = ""
         if (batch > 0):
-            data_file = f"data/cifar-10/data_batch_{batch}"
+            data_file = f"data/cifar10/data_batch_{batch}"
         else:
-            data_file = "data/cifar-10/test_batch"
+            data_file = "data/cifar10/test_batch"
         data_dict = unpickle(data_file)
         images = data_dict[b'data']
 

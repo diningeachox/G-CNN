@@ -24,8 +24,11 @@ if __name__ == "__main__":
     #net = P4CNN(3, device=device).to(device)
     net = P4AllCNN(3, device=device).to(device)
 
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
+
     # Forward
-    a = torch.rand(2, 3, 32, 32).to(device)
+    a = torch.rand(4, 3, 32, 32).to(device)
+    b = torch.rand(4, 3, 32, 32).to(device)
 
     start = time()
     y = net(a)
@@ -33,7 +36,6 @@ if __name__ == "__main__":
     print(f"Time elapsed: {end - start} s")
 
     # Backward
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
     target = torch.zeros_like(y).to(device)
     loss = nn.MSELoss()(y, target)
 
@@ -43,4 +45,20 @@ if __name__ == "__main__":
 
     #optimizer.step()
     print(f"Backward time: {end - start} s")
-    print(y.shape)
+    print(y)
+
+    start = time()
+    y = net(a)
+    end = time()
+    print(f"Time elapsed: {end - start} s")
+
+    # Backward
+    target = torch.zeros_like(y).to(device)
+    loss = nn.MSELoss()(y, target)
+
+    start = time()
+    loss.backward()
+    end = time()
+
+    #optimizer.step()
+    print(f"Backward time: {end - start} s")

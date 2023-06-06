@@ -15,7 +15,7 @@ CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
 libtorch<br>
 
 # Usage
-Before running the code it is recommended to install the C++/CUDA optimization modules.
+Before running the code it is **highly recommended** to install the C++/CUDA optimization modules. (Otherwise it may be very slow!)
 
 In the command line, use the following commands <br>
 `py setup.py install` (C++ extensions) <br>
@@ -32,7 +32,8 @@ To use CUDA accelerated forward() and backward(), use <br>
 * [x] Optimization using C++/CUDA
 * [x] Dataloader with rotations and reflections support
 * [ ] Unit tests
-* [ ] Train the G-CNN models
+* [x] Training scripts
 * [ ] Benchmark results
+* [ ] Visualizations
 ----
 [^1]: Taco S. Cohen, Max Welling **Group Equivariant Convolutional Networks** (2016)
