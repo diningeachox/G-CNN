@@ -11,7 +11,6 @@ __device__ __forceinline__ scalar_t sigmoid(scalar_t z) {
   return 1.0 / (1.0 + exp(-z));
 }
 
-namespace {
 //template <typename scalar_t>
 __global__ void gcnn_cuda_forward_kernel(
     torch::PackedTensorAccessor32<int,4,torch::RestrictPtrTraits> ind1,
@@ -38,7 +37,6 @@ __global__ void gcnn_cuda_forward_kernel(
   }
 }
 
-} //namespace
 
 __global__ void gmaxpool_cuda_forward_kernel(
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> input,
@@ -76,7 +74,7 @@ __global__ void gcnn_cuda_backward_kernel(
                   auto _s = ind1[s_prime][s][u][v];
                   auto _u = ind2[s_prime][s][u][v];
                   auto _v = ind3[s_prime][s][u][v];
-                  grad_filters[row][col][_s][_u][_v] = grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v];
+                  grad_filters[row][col][_s][_u][_v] += grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v];
               }
           }
       }

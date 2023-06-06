@@ -32,7 +32,6 @@ def unpickle(file):
     return dict
 
 
-
 class CIFARDataset(Dataset):
     def __init__(self, batch=1, transform=None, rot=True, ref=False):
         data_file = ""
@@ -80,7 +79,7 @@ class CIFARDataset(Dataset):
 
         return img, label
 
-def get_datasets():
+def get_datasets(batch_size):
     mean = [0.5, 0.5, 0.5]
     std = [0.5, 0.5, 0.5]
 
@@ -105,13 +104,13 @@ def get_datasets():
     train_data = CIFARDataset(1, train_transforms)
     test_data = CIFARDataset(0, test_transforms)
 
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=1, shuffle=True)
+    trainloader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
     testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
     return trainloader, testloader
 
 #Some data exploration and visualization
 if __name__ == "__main__":
-    trainloader, testloader = get_datasets()
+    trainloader, testloader = get_datasets(batch_size)
 
     it = iter(trainloader)
     data = next(it)

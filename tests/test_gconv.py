@@ -7,6 +7,12 @@ from data.dataloader import CIFARDataset, get_datasets
 device = "cuda" if torch.cuda.is_available() else "cpu"
 g_conv_layer = GConv2d(3, 10, filter_size=3, device=device).to(device)
 
+def test_group_element():
+    pass
+
+def test_group_element_inverse():
+    pass
+
 def test_equivariance():
     #Load test image
     trainloader, testloader = get_datasets()
@@ -25,5 +31,8 @@ def test_equivariance():
     assert rot_y.shape == y_rot_img.shape
 
     #Check equivariance (a low tolerance for floating point)
-    assert torch.allclose(rot_y, y_rot_img, atol=1e-05)
+    assert torch.allclose(rot_y, y_rot_img, atol=1e-05, rtol=1e-5)
     assert not torch.allclose(y, torch.zeros_like(y))
+
+def test_backward():
+    pass

@@ -17,32 +17,35 @@ class P4CNN(nn.Module):
     max-pool after last layer
     """
 
-    def __init__(self, in_channels, device="cpu"):
+    def __init__(self, in_channels, device="cpu", n_classes=10):
         super().__init__()
 
         self.features = nn.Sequential(
-            GConv2d(in_channels, 10, filter_size=3, device=device),
-            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
-            nn.BatchNorm2d(40),
-            nn.ReLU(),
-            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
-            nn.BatchNorm2d(40),
-            nn.ReLU(),
-            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
-            nn.BatchNorm2d(40),
-            nn.ReLU(),
-            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
-            nn.BatchNorm2d(40),
-            nn.ReLU(),
-            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device),
-            nn.BatchNorm2d(40),
-            nn.ReLU(),
-            GConv2d(10, 10, filter_size=4, in_transformations=4, device=device),
+            GConv2d(in_channels, 10, filter_size=3, device=device).to(device),
+            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
             nn.BatchNorm2d(40),
             nn.ReLU(),
             GMaxPool2d(device=device).to(device),
+            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
+            nn.BatchNorm2d(40),
+            nn.ReLU(),
+            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
+            nn.BatchNorm2d(40),
+            nn.ReLU(),
+            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
+            nn.BatchNorm2d(40),
+            nn.ReLU(),
+            GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
+            nn.BatchNorm2d(40),
+            nn.ReLU(),
+            GConv2d(10, 10, filter_size=4, in_transformations=4, device=device).to(device),
+            nn.BatchNorm2d(40),
+            nn.ReLU(),
         )
+        self.fc = nn.Linear(40, n_classes)
 
     def forward(self, x):
         x = self.features(x)
+        x = torch.reshape(x, (x.shape[0], x.shape[1]))
+        x = self.fc(x)
         return x

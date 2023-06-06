@@ -62,6 +62,7 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ctx.filter_size = filter_size
         ctx.device = device
 
+
         filters_transformed = gcnn_cuda.forward(
             filters,
             in_channels,
@@ -74,8 +75,21 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind3,
         ).to(device)
 
+        '''
+        filters_transformed = gcnn_functions_cpp.transform_filter(
+            out_channels,
+            out_trans,
+            in_channels,
+            in_trans,
+            filter_size,
+            ind1,
+            ind2,
+            ind3,
+            filters,
+        ).to(device)
+        '''
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed)
+        return F.conv2d(input, filters_transformed).to(device)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -91,15 +105,14 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         print(dw.shape)
         """
 
-        grad_input = None
-        # grad_filters = torch.zeros_like(filters)
+        #print("CUDA backward")
 
         grad_input = torch.nn.grad.conv2d_input(
             input.shape, filters_transformed, grad_output
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
             input, filters_transformed.shape, grad_output
-        )
+        ).contiguous()
 
         grad_filters = gcnn_cuda.backward(
             ctx.out_channels,
@@ -111,7 +124,21 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind2,
             ind3,
             grad_filters_trans,
-        ).to(device)
+        )
+
+        '''
+        grad_filters = gcnn_functions_cpp.gcnn_backward(
+            ctx.out_channels,
+            ctx.out_trans,
+            ctx.in_channels,
+            ctx.in_trans,
+            ctx.filter_size,
+            ind1,
+            ind2,
+            ind3,
+            grad_filters_trans,
+        ).to(ctx.device)
+        '''
 
         # 11 parameters in forward() so need to pad the number of fields returned
         return (
@@ -167,7 +194,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
 
         # filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed)
+        return F.conv2d(input, filters_transformed).to(device)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -182,8 +209,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
                 dw[] += F.conv2d(input[:, i, :, :].unsqueeze(1), grad_output[:, j, :, :].unsqueeze(1))
         print(dw.shape)
         """
-
-        grad_input = None
+        #print("C++ backward")
 
         grad_input = torch.nn.grad.conv2d_input(
             input.shape, filters_transformed, grad_output
@@ -422,14 +448,26 @@ class GConv2d(nn.Module):
             self.device,
         )
 
+class GMaxPoolFunctions(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        input,
+        device,
+    ):
+        output = gcnn_cuda.gmaxpool_forward(x)
+        ctx.save_for_backward(output)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+
+        pass
 
 """
 Here we implement coset pooling over H and subsample over cosets gH, where
 H = The 4 rotations around the origin if G = p4
-
 """
-
-
 class GMaxPool2d(nn.Module):
     def __init__(self, group="p4", device="cpu"):
         super().__init__()
@@ -437,30 +475,42 @@ class GMaxPool2d(nn.Module):
         self.device = device
 
     def forward(self, x):
-        # x is of shape [channels x |H|, width, height]
-        # out should be of shape [channels, width, height]
-
+        # x is of shape [B, channels x |H|, width, height]
+        # out should be of shape [B, channels, width, height]
         if self.group == "p4":
-            if self.device == "cuda":
+            '''
+            if self.device == "cpu":
                 out = gcnn_functions_cpp.gmaxpool_forward(x)
                 out.requires_grad_(True)
             else:
-                out = torch.zeros(
-                    x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3]
+                out = gcnn_cuda.gmaxpool_forward(x)
+                out.requires_grad_(True)
+            '''
+            #x = F.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
+            #x = F.max_pooling_2d(x, ksize, stride, pad, cover_all, use_cudnn)
+            #x = F.reshape(x, (xs[0], xs[1], xs[2], x.data.shape[2], x.data.shape[3]))
+            #xs = x.shape
+            #x = torch.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
+            '''
+            out = torch.zeros(
+                x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3]
+            )
+            for b, i, u, v in itertools.product(
+                range(x.shape[0]),
+                range(out.shape[0]),
+                range(x.shape[2]),
+                range(x.shape[3]),
+            ):
+                out[b, i, u, v] = max(
+                    x[b, i, u, v],
+                    x[b, i + out.shape[0], u, v],
+                    x[b, i + out.shape[0] * 2, u, v],
+                    x[b, i + out.shape[0] * 3, u, v],
                 )
-                for b, i, u, v in itertools.product(
-                    range(x.shape[0]),
-                    range(out.shape[0]),
-                    range(x.shape[2]),
-                    range(x.shape[3]),
-                ):
-                    out[b, i, u, v] = max(
-                        x[b, i, u, v],
-                        x[b, i + out.shape[0], u, v],
-                        x[b, i + out.shape[0] * 2, u, v],
-                        x[b, i + out.shape[0] * 3, u, v],
-                    )
-        return out
+            '''
+            x = nn.MaxPool2d(kernel_size=2)(x)
+
+        return x.to(self.device)
 
 
 if __name__ == "__main__":
