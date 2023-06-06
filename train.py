@@ -8,7 +8,13 @@ import torch.nn as nn
 
 from models.p4cnn import P4CNN
 from models.gconv import GConv2d
-from data.dataloader import CIFARDataset, get_datasets
+from data.cifar10.dataloader import CIFARDataset, get_datasets
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", type=str, default="p4cnn")
+
+args = parser.parse_args()
+
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -50,6 +56,8 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=2, device=device):
 
 if __name__ == "__main__":
     print("Loading datasets...")
-    trainloader, testloader = get_datasets(batch_size=2)
+    if (args.model == "p4all4cnn"):
+        trainloader, testloader = get_datasets(batch_size=2)
+        
     print("Beginning training...")
     train(trainloader)

@@ -4,3 +4,7 @@ build/
 dist/
 gcnn_cuda.egg-info/
 gcnn_functions_cpp.egg-info/
+data/rotated_mnist/mnist*
+data/cifar10/data_batch_*
+data/cifar10/batches.meta
+data/cifar10/test_batch

@@ -50,6 +50,8 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         in_trans,
         out_trans,
         filter_size,
+        stride,
+        padding,
         ind1,
         ind2,
         ind3,
@@ -61,7 +63,8 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
         ctx.device = device
-
+        ctx.stride = stride
+        ctx.padding = padding
 
         filters_transformed = gcnn_cuda.forward(
             filters,
@@ -89,7 +92,7 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ).to(device)
         '''
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed).to(device)
+        return F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -106,12 +109,11 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         """
 
         #print("CUDA backward")
-
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output
+            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output
+            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
         ).contiguous()
 
         grad_filters = gcnn_cuda.backward(
@@ -153,6 +155,8 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             None,
             None,
             None,
+            None,
+            None,
         )
 
 
@@ -168,6 +172,8 @@ class GConvFunctionsCpp(torch.autograd.Function):
         in_trans,
         out_trans,
         filter_size,
+        stride,
+        padding,
         ind1,
         ind2,
         ind3,
@@ -179,6 +185,8 @@ class GConvFunctionsCpp(torch.autograd.Function):
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
         ctx.device = device
+        ctx.stride = stride
+        ctx.padding = padding
 
         filters_transformed = gcnn_functions_cpp.transform_filter(
             out_channels,
@@ -194,7 +202,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
 
         # filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed).to(device)
+        return F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -212,10 +220,10 @@ class GConvFunctionsCpp(torch.autograd.Function):
         #print("C++ backward")
 
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output
+            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output
+            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
         )
 
         grad_filters = gcnn_functions_cpp.gcnn_backward(
@@ -243,6 +251,8 @@ class GConvFunctionsCpp(torch.autograd.Function):
             None,
             None,
             None,
+            None,
+            None,
         )
 
 
@@ -258,6 +268,8 @@ class GConvFunctions(torch.autograd.Function):
         in_trans,
         out_trans,
         filter_size,
+        stride,
+        padding,
         ind1,
         ind2,
         ind3,
@@ -271,6 +283,8 @@ class GConvFunctions(torch.autograd.Function):
         ctx.in_trans = in_trans
         ctx.out_trans = out_trans
         ctx.filter_size = filter_size
+        ctx.stride = stride
+        ctx.padding = padding
 
         filters_transformed = torch.zeros(
             out_channels * out_trans,
@@ -298,7 +312,7 @@ class GConvFunctions(torch.autograd.Function):
             filters_transformed[i * s_prime, j * s, u, v] = filters[i, j, _s, _u, _v]
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed)
+        return F.conv2d(input, filters_transformed, stride=stride, padding=padding)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -318,10 +332,10 @@ class GConvFunctions(torch.autograd.Function):
         grad_filters = torch.zeros_like(filters)
 
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output
+            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output
+            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
         )
         # print(grad_filters_trans.shape)
         # grad_output.backward(filters)
@@ -357,6 +371,8 @@ class GConvFunctions(torch.autograd.Function):
             None,
             None,
             None,
+            None,
+            None,
         )
 
 
@@ -367,6 +383,7 @@ class GConv2d(nn.Module):
         out_channels,
         filter_size=1,
         stride=1,
+        padding=0,
         in_transformations=1,
         out_transformations=4,
         group="p4",
@@ -389,6 +406,9 @@ class GConv2d(nn.Module):
         self.out_trans = out_transformations
         self.filter_size = filter_size
         self.device = device
+
+        self.stride = stride
+        self.padding = padding
 
         # Filter transformations stored as a K_l x S_l x K_{l-1} x S_{l_1} x n x n
         # Precompute lookup indices
@@ -442,6 +462,8 @@ class GConv2d(nn.Module):
             self.in_trans,
             self.out_trans,
             self.filter_size,
+            self.stride,
+            self.padding,
             self.ind1,
             self.ind2,
             self.ind3,
