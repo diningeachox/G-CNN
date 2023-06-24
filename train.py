@@ -58,7 +58,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
 if __name__ == "__main__":
     print("Loading datasets...")
     if (args.model == "p4allcnn"):
-        trainloader, testloader = get_datasets(batch_size=1)
+        trainloader, testloader = get_datasets(batch_size=8)
 
-    print("Beginning training...")
-    train(trainloader)
+        print("Beginning training...")
+        train(trainloader, batch_size=8)
