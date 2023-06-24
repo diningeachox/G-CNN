@@ -2,7 +2,7 @@ import pytest
 import torch
 from models.p4cnn import P4CNN
 from models.gconv import GConv2d
-#from data.dataloader import CIFARDataset, get_datasets
+from data.dataloader import CIFARDataset, get_datasets
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 g_conv_layer = GConv2d(3, 10, filter_size=3, device=device).to(device)

@@ -76,7 +76,7 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind1,
             ind2,
             ind3,
-        ).to(device)
+        )
 
         '''
         filters_transformed = gcnn_functions_cpp.transform_filter(
@@ -92,7 +92,8 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         ).to(device)
         '''
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
+        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
+        return output
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -188,7 +189,8 @@ class GConvFunctionsCpp(torch.autograd.Function):
 
         # filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        return F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
+        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
+        return output
 
     @staticmethod
     def backward(ctx, grad_output):

@@ -13,6 +13,8 @@ numpy<br>
 pytorch >= 1.12.1<br>
 CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
 libtorch<br>
+scikit-image <br>
+scikit-learn <br>
 
 # Usage
 Before running the code it is **highly recommended** to install the C++/CUDA optimization modules. (Otherwise it may be very slow!)
@@ -30,6 +32,7 @@ To use CUDA accelerated forward() and backward(), use <br>
 
 # Task List
 * [x] Optimization using C++/CUDA
+* [ ] Further GPU optimization with shared memory
 * [x] Dataloader with rotations and reflections support
 * [ ] Unit tests
 * [x] Training scripts

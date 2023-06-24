@@ -23,27 +23,26 @@ class P4CNN(nn.Module):
         self.features = nn.Sequential(
             GConv2d(in_channels, 10, filter_size=3, device=device).to(device),
             GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device).to(device),
             nn.ReLU(),
-            #GMaxPool2d(device=device).to(device),
             nn.MaxPool2d(kernel_size=2),
             GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device),
             nn.ReLU(),
             GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device),
             nn.ReLU(),
             GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device),
             nn.ReLU(),
             GConv2d(10, 10, filter_size=3, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device),
             nn.ReLU(),
             GConv2d(10, 10, filter_size=4, in_transformations=4, device=device).to(device),
-            nn.BatchNorm2d(40),
+            nn.BatchNorm2d(40, device=device),
             nn.ReLU(),
         )
-        self.fc = nn.Linear(40, n_classes)
+        self.fc = nn.Linear(40, n_classes, device=device)
 
     def forward(self, x):
         x = self.features(x)

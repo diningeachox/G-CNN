@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <initializer_list>
 #include <vector>
+#include <stdio.h>
 
 template <typename scalar_t>
 __device__ __forceinline__ scalar_t sigmoid(scalar_t z) {
@@ -18,19 +19,21 @@ __global__ void gcnn_cuda_forward_kernel(
     torch::PackedTensorAccessor32<int,4,torch::RestrictPtrTraits> ind3,
     torch::PackedTensorAccessor32<float,5,torch::RestrictPtrTraits> filters,
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> filters_transformed,
-    int out_trans, int in_trans, int filter_size) {
+    int in_channels, int out_channels, int out_trans, int in_trans, int filter_size) {
 
   // column index
   const int row = blockIdx.y * blockDim.y + threadIdx.y;
   const int col = blockIdx.x * blockDim.x + threadIdx.x;
-  for (int s_prime = 0; s_prime < out_trans; s_prime++){
-      for (int s = 0; s < in_trans; s++){
-          for (int u = 0; u < filter_size; u++){
-              for (int v = 0; v < filter_size; v++){
-                  auto _s = ind1[s_prime][s][u][v];
-                  auto _u = ind2[s_prime][s][u][v];
-                  auto _v = ind3[s_prime][s][u][v];
-                  filters_transformed[row * s_prime][col * s][u][v] = filters[row][col][_s][_u][_v];
+  if (row < out_channels && col < in_channels){
+      for (int s_prime = 0; s_prime < out_trans; s_prime++){
+          for (int s = 0; s < in_trans; s++){
+              for (int u = 0; u < filter_size; u++){
+                  for (int v = 0; v < filter_size; v++){
+                      int _s = ind1[s_prime][s][u][v];
+                      int _u = ind2[s_prime][s][u][v];
+                      int _v = ind3[s_prime][s][u][v];
+                      filters_transformed[row * s_prime][col * s][u][v] = filters[row][col][_s][_u][_v];
+                  }
               }
           }
       }
@@ -62,19 +65,22 @@ __global__ void gcnn_cuda_backward_kernel(
     torch::PackedTensorAccessor32<int,4,torch::RestrictPtrTraits> ind3,
     torch::PackedTensorAccessor32<float,5,torch::RestrictPtrTraits> grad_filters,
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> grad_filters_trans,
-    int out_trans, int in_trans, int filter_size) {
+    int in_channels, int out_channels, int out_trans, int in_trans, int filter_size) {
 
   // column index
   const int row = blockIdx.y * blockDim.y + threadIdx.y;
   const int col = blockIdx.x * blockDim.x + threadIdx.x;
-  for (int s_prime = 0; s_prime < out_trans; s_prime++){
-      for (int s = 0; s < in_trans; s++){
-          for (int u = 0; u < filter_size; u++){
-              for (int v = 0; v < filter_size; v++){
-                  auto _s = ind1[s_prime][s][u][v];
-                  auto _u = ind2[s_prime][s][u][v];
-                  auto _v = ind3[s_prime][s][u][v];
-                  grad_filters[row][col][_s][_u][_v] += grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v];
+  if (row < out_channels && col < in_channels){
+      for (int s_prime = 0; s_prime < out_trans; s_prime++){
+          for (int s = 0; s < in_trans; s++){
+              for (int u = 0; u < filter_size; u++){
+                  for (int v = 0; v < filter_size; v++){
+                      int _s = ind1[s_prime][s][u][v];
+                      int _u = ind2[s_prime][s][u][v];
+                      int _v = ind3[s_prime][s][u][v];
+                      __syncthreads(); //Stop race conditions
+                      grad_filters[row][col][_s][_u][_v] += grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v];
+                  }
               }
           }
       }
@@ -105,7 +111,7 @@ torch::Tensor gcnn_cuda_forward(
         ind3.packed_accessor32<int,4,torch::RestrictPtrTraits>(),
         filters.packed_accessor32<float,5,torch::RestrictPtrTraits>(),
         filters_transformed.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
-        out_trans, in_trans, filter_size);
+        in_channels, out_channels, out_trans, in_trans, filter_size);
 
     /*
     AT_DISPATCH_FLOATING_TYPES(filters.type(), "gcnn_forward_cuda", ([&] {
@@ -156,7 +162,7 @@ torch::Tensor gcnn_cuda_backward(
         ind3.packed_accessor32<int,4,torch::RestrictPtrTraits>(),
         grad_filters.packed_accessor32<float,5,torch::RestrictPtrTraits>(),
         grad_filters_trans.packed_accessor32<float,4,torch::RestrictPtrTraits>(),
-        out_trans, in_trans, filter_size);
+        in_channels, out_channels, out_trans, in_trans, filter_size);
 
     /*
     AT_DISPATCH_FLOATING_TYPES(filters.type(), "gcnn_forward_cuda", ([&] {

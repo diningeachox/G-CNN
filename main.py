@@ -21,14 +21,14 @@ if __name__ == "__main__":
     # device = 'cpu'
     device = "cuda" if args.gpu else "cpu"
     print(device)
-    #net = P4CNN(3, device=device).to(device)
-    net = P4AllCNN(3, device=device).to(device)
+    net = P4CNN(3, device=device).to(device)
+    #net = P4AllCNN(3, device=device).to(device)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
 
     # Forward
-    a = torch.rand(4, 3, 32, 32).to(device)
-    b = torch.rand(4, 3, 32, 32).to(device)
+    a = torch.rand(2, 3, 28, 28).to(device) / 100.0
+    b = torch.rand(4, 3, 28, 28).to(device)
 
     start = time()
     y = net(a)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     start = time()
     loss.backward()
     end = time()
-
+    
     #optimizer.step()
     print(f"Backward time: {end - start} s")
     print(y)

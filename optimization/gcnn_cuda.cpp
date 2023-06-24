@@ -45,7 +45,7 @@ torch::Tensor gcnn_forward(
     torch::Tensor ind3){
 
     //Tensor to write new values to (also move the tensor to GPU)
-    torch::Tensor filters_transformed = torch::zeros({out_channels * out_trans, in_channels * in_trans, filter_size, filter_size}, torch::TensorOptions().device(torch::kCUDA));
+    torch::Tensor filters_transformed = torch::zeros({out_channels * out_trans, in_channels * in_trans, filter_size, filter_size}, torch::TensorOptions().device(torch::kCUDA).requires_grad(true));
 
     //Check if input tensors are on the GPU
     CHECK_INPUT(filters);
