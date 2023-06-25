@@ -74,7 +74,7 @@ torch::Tensor gcnn_backward(
     torch::Tensor ind3,
     torch::Tensor grad_filters_trans
 ){
-    torch::Tensor grad_filters = torch::zeros({out_channels, in_channels, in_trans, filter_size, filter_size}, torch::TensorOptions().device(torch::kCUDA));
+    torch::Tensor grad_filters = torch::zeros({out_channels, in_channels, in_trans, filter_size, filter_size}, torch::TensorOptions().device(torch::kCUDA).requires_grad(true));
 
     //Check if input tensors are on the GPU
     CHECK_INPUT(grad_filters_trans);

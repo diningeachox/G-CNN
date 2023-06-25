@@ -20,7 +20,7 @@ scikit-learn <br>
 Before running the code it is **highly recommended** to install the C++/CUDA optimization modules. (Otherwise it may be very slow!)
 
 In the command line, use the following commands <br>
-`py setup.py install` (C++ extensions) <br>
+`py setup_cpp.py install` (C++ extensions) <br>
 `py setup_cuda.py install` (CUDA extensions)
 
 These will install the corresponding C++/CUDA functions instead of the native pytorch functions used for forward() and backward() functions in the GCNN models.

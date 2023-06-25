@@ -78,22 +78,10 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind3,
         )
 
-        '''
-        filters_transformed = gcnn_functions_cpp.transform_filter(
-            out_channels,
-            out_trans,
-            in_channels,
-            in_trans,
-            filter_size,
-            ind1,
-            ind2,
-            ind3,
-            filters,
-        ).to(device)
-        '''
+        #output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
-        return output
+        #output.requires_grad = True
+        return F.conv2d(input, filters_transformed, stride=stride, padding=padding)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -128,23 +116,9 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind3,
             grad_filters_trans,
         )
+        # 14 parameters in forward() so need to pad the number of fields returned
+        return grad_input, grad_filters, None, None, None, None, None, None, None, None, None, None, None
 
-        # 11 parameters in forward() so need to pad the number of fields returned
-        return (
-            grad_input,
-            grad_filters,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
 
 
 # C++ extension
@@ -242,7 +216,6 @@ class GConvFunctionsCpp(torch.autograd.Function):
             None,
             None,
         )
-
 
 # Custom forward and backward functions
 class GConvFunctions(torch.autograd.Function):
@@ -386,8 +359,9 @@ class GConv2d(nn.Module):
             filter_size,
             filter_size,
             device=device,
+            requires_grad=True
         )
-        self.filters.requires_grad = True
+
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.in_trans = in_transformations
@@ -431,11 +405,6 @@ class GConv2d(nn.Module):
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
-
-        # Register the transformed filters as trainable parameters
-        self.register_parameter(
-            name="filter", param=torch.nn.Parameter(self.filters).to(device)
-        )
 
     def forward(self, x):
         if self.device == "cpu":

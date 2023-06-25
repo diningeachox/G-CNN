@@ -21,7 +21,6 @@ __global__ void gcnn_cuda_forward_kernel(
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> filters_transformed,
     int in_channels, int out_channels, int out_trans, int in_trans, int filter_size) {
 
-  // column index
   const int row = blockIdx.y * blockDim.y + threadIdx.y;
   const int col = blockIdx.x * blockDim.x + threadIdx.x;
   if (row < out_channels && col < in_channels){
@@ -67,7 +66,6 @@ __global__ void gcnn_cuda_backward_kernel(
     torch::PackedTensorAccessor32<float,4,torch::RestrictPtrTraits> grad_filters_trans,
     int in_channels, int out_channels, int out_trans, int in_trans, int filter_size) {
 
-  // column index
   const int row = blockIdx.y * blockDim.y + threadIdx.y;
   const int col = blockIdx.x * blockDim.x + threadIdx.x;
   if (row < out_channels && col < in_channels){

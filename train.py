@@ -25,7 +25,10 @@ def get_lr(opt):
         return param_group['lr']
 
 def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
-    model = P4AllCNN(3, device=device).to(device)
+    if (model_type == "p4allcnn"):
+        model = P4AllCNN(3, device=device).to(device)
+    else:
+        model = P4CNN(3, device=device).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min',factor=0.5, patience=5,verbose=1)
@@ -42,6 +45,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
             y = model(img)
 
             loss = nn.CrossEntropyLoss()(y, label)
+
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -61,4 +65,4 @@ if __name__ == "__main__":
         trainloader, testloader = get_datasets(batch_size=8)
 
         print("Beginning training...")
-        train(trainloader, batch_size=8)
+        train(trainloader, model_type=args.model, batch_size=8)
