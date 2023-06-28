@@ -31,7 +31,7 @@ __global__ void gcnn_cuda_forward_kernel(
                       int _s = ind1[s_prime][s][u][v];
                       int _u = ind2[s_prime][s][u][v];
                       int _v = ind3[s_prime][s][u][v];
-                      filters_transformed[row * s_prime][col * s][u][v] = filters[row][col][_s][_u][_v];
+                      filters_transformed[row * out_trans + s_prime][col * in_trans + s][u][v] = filters[row][col][_s][_u][_v];
                   }
               }
           }
