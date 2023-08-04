@@ -29,7 +29,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
 
     # Forward
-    a = torch.rand(2, 3, 28,28).to(device) / 100.0
+    a = torch.rand(2, 3, 28,28).to(device)
     b = torch.rand(4, 3, 28,28).to(device)
 
     start = time()
@@ -45,12 +45,8 @@ if __name__ == "__main__":
     loss.backward()
     end = time()
 
-    for p in net.parameters():
-        print(p.grad.norm())
-
     #optimizer.step()
     print(f"Backward time: {end - start} s")
-    print(y)
 
     start = time()
     y = net(a)

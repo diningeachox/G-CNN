@@ -389,15 +389,18 @@ class GConv2d(nn.Module):
                 torch.inverse(group_element(s_prime, 0, 0, m=ref_prime))
                 * group_element(s, u, v, m=ref)
             )
-            print(_s, _u, _v)
+            print(s_prime, s, u, v)
+            #print(_s, _u, _v)
+            print(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)))
+            print(group_element(s, u, v, m=ref))
             print(group_element_inverse(
-                torch.matmul(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)), group_element(s, u, v, m=ref))
+                torch.mm(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)), group_element(s, u, v, m=ref))
             ))
             # _s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
-
+        print(self.out_trans, self.in_trans, self.filter_size)
     def forward(self, x):
         if self.device == "cpu":
             func = GConvFunctionsCpp
