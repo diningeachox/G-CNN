@@ -75,7 +75,7 @@ torch::Tensor transform_filter(int out_channels, int out_trans, int in_channels,
                             int _s = ind1[s_prime][s][u][v].item<int>();
                             int _u = ind2[s_prime][s][u][v].item<int>();
                             int _v = ind3[s_prime][s][u][v].item<int>();
-                            filters_transformed[i * s_prime][j * s][u][v] = filters[i][j][_s][_u][_v];
+                            filters_transformed[i * out_trans + s_prime][j * in_trans + s][u][v] = filters[i][j][_s][_u][_v];
                         }
                     }
                 }

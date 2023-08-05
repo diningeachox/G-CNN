@@ -80,17 +80,17 @@ class CIFARDataset(Dataset):
         return img, label
 
 def get_datasets(batch_size):
-    mean = [0.5, 0.5, 0.5]
-    std = [0.5, 0.5, 0.5]
+    mean = [0.4914, 0.4822, 0.4465]
+    std = [0.2023, 0.1994, 0.2010]
 
     #Transforms for data augmentation
     train_transforms = transforms.Compose([
                 #transforms.RandomCrop((h,w)),
                 transforms.ToPILImage(),
                 transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomAffine(degrees=90, translate=(0.0,0.0)),
-                transforms.RandomAffine(degrees=180, translate=(0.0,0.0)),
-                transforms.RandomAffine(degrees=270, translate=(0.0,0.0)),
+                #transforms.RandomAffine(degrees=90, translate=(0.0,0.0)),
+                #transforms.RandomAffine(degrees=180, translate=(0.0,0.0)),
+                #transforms.RandomAffine(degrees=270, translate=(0.0,0.0)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std),
                 ])
@@ -115,7 +115,6 @@ if __name__ == "__main__":
     it = iter(trainloader)
     data = next(it)
 
-    print(data[0].shape)
     fig, ax = plt.subplots()
     im = ax.imshow(data[0][0].permute(1, 2, 0))
     plt.show()

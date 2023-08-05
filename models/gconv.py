@@ -30,6 +30,7 @@ def group_element(s, u, v, m=0):
 def group_element_inverse(matrix):
     if matrix[0][0] != 0:
         angle = math.atan(matrix[1][0] / matrix[0][0]) / (math.pi / 2)
+        angle = (angle + 4) % 4
     else:
         if matrix[1][0] > 0:
             angle = 1
@@ -76,26 +77,20 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind1,
             ind2,
             ind3,
-        ).to(device)
+        )
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
+<<<<<<< HEAD
         output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
         print(output)
+=======
+        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding)
+>>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
         input, filters, filters_transformed, ind1, ind2, ind3 = ctx.saved_tensors
-
-        # Calculate dw = x * grad_output channel by channel
-        """
-        dw = torch.zeros_like(filters_transformed)
-        for i in range(dw.shape[1]): #in_channels
-            for j in range(dw.shape[0]): #out_channels
-                #print(input[:, i, :, :].shape, grad_output[:, j, :, :].shape)
-                dw[] += F.conv2d(input[:, i, :, :].unsqueeze(1), grad_output[:, j, :, :].unsqueeze(1))
-        print(dw.shape)
-        """
 
         #print("CUDA backward")
         grad_input = torch.nn.grad.conv2d_input(
@@ -116,23 +111,9 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             ind3,
             grad_filters_trans,
         )
+        # 14 parameters in forward() so need to pad the number of fields returned
+        return grad_input, grad_filters, None, None, None, None, None, None, None, None, None, None, None
 
-        # 11 parameters in forward() so need to pad the number of fields returned
-        return (
-            grad_input,
-            grad_filters,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )
 
 
 # C++ extension
@@ -178,7 +159,10 @@ class GConvFunctionsCpp(torch.autograd.Function):
         # filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
         output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
+<<<<<<< HEAD
         print(output)
+=======
+>>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
         return output
 
     @staticmethod
@@ -231,7 +215,6 @@ class GConvFunctionsCpp(torch.autograd.Function):
             None,
             None,
         )
-
 
 # Custom forward and backward functions
 class GConvFunctions(torch.autograd.Function):
@@ -368,15 +351,16 @@ class GConv2d(nn.Module):
     ):
         super().__init__()
         # Filters stored as a K_l x K_{l-1} x S_{l_1} x n x n
-        self.filters = torch.randn(
+        self.filters = nn.Parameter(torch.zeros(
             out_channels,
             in_channels,
             in_transformations,
             filter_size,
             filter_size,
-            device=device,
-        )
-        self.filters.requires_grad = True
+            device=device
+        ))
+        nn.init.kaiming_uniform_(self.filters, mode='fan_in', nonlinearity='relu')
+
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.in_trans = in_transformations
@@ -414,17 +398,14 @@ class GConv2d(nn.Module):
                 torch.inverse(group_element(s_prime, 0, 0, m=ref_prime))
                 * group_element(s, u, v, m=ref)
             )
-            # print(s_prime, u, v)
-
+            print(_s, _u, _v)
+            print(group_element_inverse(
+                torch.matmul(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)), group_element(s, u, v, m=ref))
+            ))
             # _s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
-
-        # Register the transformed filters as trainable parameters
-        self.register_parameter(
-            name="filter", param=torch.nn.Parameter(self.filters).to(device)
-        )
 
     def forward(self, x):
         if self.device == "cpu":

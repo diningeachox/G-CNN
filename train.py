@@ -25,8 +25,12 @@ def get_lr(opt):
         return param_group['lr']
 
 def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
-    model = P4AllCNN(3, device=device).to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    if (model_type == "p4allcnn"):
+        model = P4AllCNN(3, device=device).to(device)
+    else:
+        model = P4CNN(3, device=device).to(device)
+    #opt = torch.optim.Adam(model.parameters(), lr=1e-3).
+    opt = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-3)
 
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min',factor=0.5, patience=5,verbose=1)
     for epoch in range(num_epochs):
@@ -42,9 +46,13 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
             y = model(img)
 
             loss = nn.CrossEntropyLoss()(y, label)
+
             opt.zero_grad()
             loss.backward()
             opt.step()
+
+            #for p in model.parameters():
+                #print(p.norm())
 
             pred = torch.argmax(y, dim=1)
             accuracy = torch.sum((pred==label).float()).item()
@@ -58,7 +66,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
 if __name__ == "__main__":
     print("Loading datasets...")
     if (args.model == "p4allcnn"):
-        trainloader, testloader = get_datasets(batch_size=1)
+        trainloader, testloader = get_datasets(batch_size=8)
 
-    print("Beginning training...")
-    train(trainloader)
+        print("Beginning training...")
+        train(trainloader, model_type=args.model, batch_size=8)

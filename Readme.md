@@ -13,12 +13,14 @@ numpy<br>
 pytorch >= 1.12.1<br>
 CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
 libtorch<br>
+scikit-image <br>
+scikit-learn <br>
 
 # Usage
 Before running the code it is **highly recommended** to install the C++/CUDA optimization modules. (Otherwise it may be very slow!)
 
 In the command line, use the following commands <br>
-`py setup.py install` (C++ extensions) <br>
+`py setup_cpp.py install` (C++ extensions) <br>
 `py setup_cuda.py install` (CUDA extensions)
 
 These will install the corresponding C++/CUDA functions instead of the native pytorch functions used for forward() and backward() functions in the GCNN models.
@@ -30,6 +32,7 @@ To use CUDA accelerated forward() and backward(), use <br>
 
 # Task List
 * [x] Optimization using C++/CUDA
+* [ ] Further GPU optimization with shared memory
 * [x] Dataloader with rotations and reflections support
 * [ ] Unit tests
 * [x] Training scripts
