@@ -29,8 +29,8 @@ def group_element(s, u, v, m=0):
 
 def group_element_inverse(matrix, rot=True):
     topleft = matrix[0][0]
-    #Topleft equals 0
-    if torch.allclose(topleft, torch.tensor([0.]), atol=1e-06, rtol=1e-6):
+    # Topleft equals 0
+    if torch.allclose(topleft, torch.tensor([0.0]), atol=1e-06, rtol=1e-6):
         if matrix[1][0] > 0:
             angle = 1
         elif matrix[1][0] < 0:
@@ -295,7 +295,9 @@ class GConvFunctions(torch.autograd.Function):
             _s = ind1[s_prime, s, u, v].item()
             _u = ind2[s_prime, s, u, v].item()
             _v = ind3[s_prime, s, u, v].item()
-            filters_transformed[i * out_trans + s_prime,j * in_trans + s, u, v] = filters[i, j, _s, _u, _v]
+            filters_transformed[
+                i * out_trans + s_prime, j * in_trans + s, u, v
+            ] = filters[i, j, _s, _u, _v]
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
         return F.conv2d(input, filters_transformed, stride=stride, padding=padding)
@@ -432,14 +434,14 @@ class GConv2d(nn.Module):
         ):
             ref_prime = s_prime > 3
             ref = s > 3
-            #Calculate new indices
+            # Calculate new indices
             new_coords = group_element_inverse(
                 torch.mm(
                     torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)),
-                    #group_element(s, u - half_x, -1 * (v - half_y), m=ref),
+                    # group_element(s, u - half_x, -1 * (v - half_y), m=ref),
                     group_element(s, v - half_x, -1 * (u - half_y), m=ref),
                 ),
-                rot=(self.in_trans > 1)
+                rot=(self.in_trans > 1),
             )
             _s = new_coords[0]
             _u = round(-1 * new_coords[2] + half_y)
