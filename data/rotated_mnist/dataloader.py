@@ -121,7 +121,6 @@ def get_datasets(batch_size):
 
 if __name__ == "__main__":
     trainloader, testloader = get_datasets(4)
-
     it = iter(trainloader)
     data = next(it)
 

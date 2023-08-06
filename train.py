@@ -64,7 +64,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
             print(
                 "Step: [{}/{}] time: {:.3f}s, Batch loss:{:.6f}, Batch accuracy:{}/{} ".format(
                     idx,
-                    len(data) // batch_size,
+                    len(data.dataset) // batch_size,
                     time() - step_time,
                     loss.item(),
                     int(accuracy),
