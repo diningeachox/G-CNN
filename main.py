@@ -5,13 +5,12 @@ from time import time
 
 import torch
 import torch.nn as nn
-
-from models.p4cnn import P4CNN
-from models.p4allcnn import P4AllCNN
-from models.gconv import GConv2d
-from data.cifar10.dataloader import CIFARDataset
-
 from torch.autograd import gradcheck
+
+from data.cifar10.dataloader import CIFARDataset
+from models.gconv import GConv2d
+from models.p4allcnn import P4AllCNN
+from models.p4cnn import P4CNN
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-g", "--gpu", action="store_true")
@@ -23,23 +22,14 @@ if __name__ == "__main__":
     # device = 'cpu'
     device = "cuda" if args.gpu else "cpu"
     print(device)
-<<<<<<< HEAD
-    net = P4CNN(3, device=device).to(device)
-=======
     net = P4CNN(3, device=device)
->>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
     #net = P4AllCNN(3, device=device).to(device)
 
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
 
     # Forward
-<<<<<<< HEAD
-    a = torch.rand(2, 3, 28, 28).to(device)
-    b = torch.rand(4, 3, 28, 28).to(device)
-=======
-    a = torch.rand(2, 3, 28,28).to(device) / 100.0
+    a = torch.rand(2, 3, 28,28).to(device)
     b = torch.rand(4, 3, 28,28).to(device)
->>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
 
     start = time()
     y = net(a)
@@ -54,13 +44,12 @@ if __name__ == "__main__":
     loss.backward()
     end = time()
 
-    for p in net.parameters():
-        print(p.grad.norm())
+    #for p in net.parameters():
+        #print(p.grad.norm())
 
     #optimizer.step()
     print(f"Backward time: {end - start} s")
-    print(y)
-    '''
+
     start = time()
     y = net(a)
     end = time()
@@ -76,4 +65,3 @@ if __name__ == "__main__":
 
     #optimizer.step()
     print(f"Backward time: {end - start} s")
-    '''

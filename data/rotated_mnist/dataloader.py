@@ -2,29 +2,29 @@
     Contains methods for loading and rotating the rotated MNIST images
 """
 
-#Progress bar
-from tqdm import tqdm
-
-#Timer
-import time
 import os
+import pickle
 
+# Timer
+import time
+
+import imageio
+
+# Image display
+import matplotlib.pylab as plt
 import numpy as np
 
-#Data processing and image reading modules
+# Data processing and image reading modules
 import torch
-from torch.utils.data import Dataset
-from torch.utils.data.sampler import SubsetRandomSampler, WeightedRandomSampler
-from torch.utils.data import DataLoader
-from torch.utils.data import Subset
-from torchvision import datasets, models, transforms
+from PIL import Image
 from skimage import io, transform
 from sklearn.preprocessing import MinMaxScaler
-from PIL import Image
-import imageio
-#Image display
-import matplotlib.pylab as plt
-import pickle
+from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data.sampler import SubsetRandomSampler, WeightedRandomSampler
+from torchvision import datasets, models, transforms
+
+# Progress bar
+from tqdm import tqdm
 
 
 class RMNISTDataset(Dataset):
@@ -39,9 +39,11 @@ class RMNISTDataset(Dataset):
         img = self.images[idx]
         label = self.labels[idx]
 
-        #Apply transforms
+        # Apply transforms
         if self.transform:
-            img_transpose = np.transpose(img, (1,2,0)) #Transform np array to the format H x W x C
+            img_transpose = np.transpose(
+                img, (1, 2, 0)
+            )  # Transform np array to the format H x W x C
             img = self.transform(img_transpose)
 
         return img, label

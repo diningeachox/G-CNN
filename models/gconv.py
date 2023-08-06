@@ -27,7 +27,7 @@ def group_element(s, u, v, m=0):
     return matrix
 
 
-def group_element_inverse(matrix):
+def group_element_inverse(matrix, rot=True):
     if matrix[0][0] != 0:
         angle = math.atan(matrix[1][0] / matrix[0][0]) / (math.pi / 2)
         angle = (angle + 4) % 4
@@ -36,7 +36,7 @@ def group_element_inverse(matrix):
             angle = 1
         elif matrix[1][0] < 0:
             angle = 3
-    return (int(angle), int(matrix[0][2]), int(matrix[1][2]))
+    return (int(angle) if rot else 0, int(matrix[0][2]), int(matrix[1][2]))
 
 
 # CUDA extension
@@ -80,24 +80,27 @@ class GConvFunctionsCUDA(torch.autograd.Function):
         )
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-<<<<<<< HEAD
-        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
-        print(output)
-=======
         output = F.conv2d(input, filters_transformed, stride=stride, padding=padding)
->>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
         return output
 
     @staticmethod
     def backward(ctx, grad_output):
         input, filters, filters_transformed, ind1, ind2, ind3 = ctx.saved_tensors
 
-        #print("CUDA backward")
+        # print("CUDA backward")
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
+            input.shape,
+            filters_transformed,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
+            input,
+            filters_transformed.shape,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         ).contiguous()
 
         grad_filters = gcnn_cuda.backward(
@@ -112,8 +115,21 @@ class GConvFunctionsCUDA(torch.autograd.Function):
             grad_filters_trans,
         )
         # 14 parameters in forward() so need to pad the number of fields returned
-        return grad_input, grad_filters, None, None, None, None, None, None, None, None, None, None, None
-
+        return (
+            grad_input,
+            grad_filters,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
 
 
 # C++ extension
@@ -158,11 +174,9 @@ class GConvFunctionsCpp(torch.autograd.Function):
 
         # filters_transformed = torch.reshape(filters_transformed, (out_channels * out_trans, in_channels * in_trans, filter_size, filter_size)).to(device)
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
-        output = F.conv2d(input, filters_transformed, stride=stride, padding=padding).to(device)
-<<<<<<< HEAD
-        print(output)
-=======
->>>>>>> bd4210ffd9be09bef281ef6282592c56a1de600d
+        output = F.conv2d(
+            input, filters_transformed, stride=stride, padding=padding
+        ).to(device)
         return output
 
     @staticmethod
@@ -178,13 +192,21 @@ class GConvFunctionsCpp(torch.autograd.Function):
                 dw[] += F.conv2d(input[:, i, :, :].unsqueeze(1), grad_output[:, j, :, :].unsqueeze(1))
         print(dw.shape)
         """
-        #print("C++ backward")
+        # print("C++ backward")
 
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
+            input.shape,
+            filters_transformed,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
+            input,
+            filters_transformed.shape,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         )
 
         grad_filters = gcnn_functions_cpp.gcnn_backward(
@@ -215,6 +237,7 @@ class GConvFunctionsCpp(torch.autograd.Function):
             None,
             None,
         )
+
 
 # Custom forward and backward functions
 class GConvFunctions(torch.autograd.Function):
@@ -292,10 +315,18 @@ class GConvFunctions(torch.autograd.Function):
         grad_filters = torch.zeros_like(filters)
 
         grad_input = torch.nn.grad.conv2d_input(
-            input.shape, filters_transformed, grad_output, stride=ctx.stride, padding=ctx.padding
+            input.shape,
+            filters_transformed,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         )
         grad_filters_trans = torch.nn.grad.conv2d_weight(
-            input, filters_transformed.shape, grad_output, stride=ctx.stride, padding=ctx.padding
+            input,
+            filters_transformed.shape,
+            grad_output,
+            stride=ctx.stride,
+            padding=ctx.padding,
         )
         # print(grad_filters_trans.shape)
         # grad_output.backward(filters)
@@ -351,15 +382,17 @@ class GConv2d(nn.Module):
     ):
         super().__init__()
         # Filters stored as a K_l x K_{l-1} x S_{l_1} x n x n
-        self.filters = nn.Parameter(torch.zeros(
-            out_channels,
-            in_channels,
-            in_transformations,
-            filter_size,
-            filter_size,
-            device=device
-        ))
-        nn.init.kaiming_uniform_(self.filters, mode='fan_in', nonlinearity='relu')
+        self.filters = nn.Parameter(
+            torch.zeros(
+                out_channels,
+                in_channels,
+                in_transformations,
+                filter_size,
+                filter_size,
+                device=device,
+            )
+        )
+        nn.init.kaiming_uniform_(self.filters, mode="fan_in", nonlinearity="relu")
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -386,6 +419,8 @@ class GConv2d(nn.Module):
             dtype=torch.int32,
         ).to(device)
 
+        half_x = self.filter_size / 2.0 - 0.5
+        half_y = self.filter_size / 2.0 - 0.5
         for s_prime, s, u, v in itertools.product(
             range(self.out_trans),
             range(self.in_trans),
@@ -394,18 +429,43 @@ class GConv2d(nn.Module):
         ):
             ref_prime = s_prime > 3
             ref = s > 3
+            '''
             _s, _u, _v = group_element_inverse(
                 torch.inverse(group_element(s_prime, 0, 0, m=ref_prime))
                 * group_element(s, u, v, m=ref)
             )
-            print(_s, _u, _v)
-            print(group_element_inverse(
-                torch.matmul(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)), group_element(s, u, v, m=ref))
-            ))
+            print(s_prime, s, u, v)
+            # print(_s, _u, _v)
+
+            print(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)))
+            print(group_element(s, u, v, m=ref))
+            print(
+                group_element_inverse(
+                    torch.mm(
+                        torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)),
+                        group_element(s, u - half_x, v - half_y, m=ref),
+                    )
+                )
+            )
+            '''
+
+            new_coords = group_element_inverse(
+                torch.mm(
+                    torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)),
+                    group_element(s, u - half_x, -1 * (v - half_y), m=ref),
+                ),
+                rot=(self.in_trans > 1)
+            )
+            #print(new_coords[0], new_coords[1] + half_x, new_coords[2] + half_y)
+            _s = new_coords[0]
+            _u = new_coords[1] + half_x
+            _v = -1 * new_coords[2] + half_y
+
             # _s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
+        #print(self.in_trans, self.out_trans, self.filter_size)
 
     def forward(self, x):
         if self.device == "cpu":
@@ -433,6 +493,8 @@ class GConv2d(nn.Module):
 Here we implement coset pooling over H and subsample over cosets gH, where
 H = The 4 rotations around the origin if G = p4
 """
+
+
 class GMaxPool2d(nn.Module):
     def __init__(self, group="p4", device="cpu"):
         super().__init__()
@@ -443,20 +505,20 @@ class GMaxPool2d(nn.Module):
         # x is of shape [B, channels x |H|, width, height]
         # out should be of shape [B, channels, width, height]
         if self.group == "p4":
-            '''
+            """
             if self.device == "cpu":
                 out = gcnn_functions_cpp.gmaxpool_forward(x)
                 out.requires_grad_(True)
             else:
                 out = gcnn_cuda.gmaxpool_forward(x)
                 out.requires_grad_(True)
-            '''
-            #x = F.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
-            #x = F.max_pooling_2d(x, ksize, stride, pad, cover_all, use_cudnn)
-            #x = F.reshape(x, (xs[0], xs[1], xs[2], x.data.shape[2], x.data.shape[3]))
-            #xs = x.shape
-            #x = torch.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
-            '''
+            """
+            # x = F.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
+            # x = F.max_pooling_2d(x, ksize, stride, pad, cover_all, use_cudnn)
+            # x = F.reshape(x, (xs[0], xs[1], xs[2], x.data.shape[2], x.data.shape[3]))
+            # xs = x.shape
+            # x = torch.reshape(x, (xs[0], xs[1] * xs[2], xs[3], xs[4]))
+            """
             out = torch.zeros(
                 x.shape[0], int(x.shape[1] / 4), x.shape[2], x.shape[3]
             )
@@ -472,7 +534,7 @@ class GMaxPool2d(nn.Module):
                     x[b, i + out.shape[0] * 2, u, v],
                     x[b, i + out.shape[0] * 3, u, v],
                 )
-            '''
+            """
             x = nn.MaxPool2d(kernel_size=2)(x)
 
         return x.to(self.device)
