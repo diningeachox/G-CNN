@@ -6,7 +6,10 @@ from time import time
 import torch
 import torch.nn as nn
 
-from data.cifar10.dataloader import CIFARDataset, get_datasets
+import data.cifar10.dataloader as CIFAR10
+import data.rotated_mnist.dataloader as RMNIST
+from data.cifar10.dataloader import CIFARDataset
+from data.rotated_mnist.dataloader import RMNISTDataset
 from models.gconv import GConv2d
 from models.p4allcnn import P4AllCNN
 from models.p4cnn import P4CNN
@@ -61,7 +64,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
             print(
                 "Step: [{}/{}] time: {:.3f}s, Batch loss:{:.6f}, Batch accuracy:{}/{} ".format(
                     idx,
-                    int(10000 / batch_size),
+                    len(data) // batch_size,
                     time() - step_time,
                     loss.item(),
                     int(accuracy),
@@ -73,10 +76,10 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
 if __name__ == "__main__":
     print("Loading datasets...")
     if args.model == "p4allcnn":
-        trainloader, testloader = get_datasets(batch_size=4)
-
+        trainloader, testloader = CIFAR10.get_datasets(batch_size=4)
         print("Beginning training on rotated CIFAR10...")
         train(trainloader, model_type=args.model, batch_size=4)
     elif args.model == "p4cnn":
+        trainloader, testloader = RMNIST.get_datasets(batch_size=8)
         print("Beginning training on rotated MNIST...")
-        pass
+        train(trainloader, model_type=args.model, batch_size=8)

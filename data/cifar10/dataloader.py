@@ -72,13 +72,10 @@ class CIFARDataset(Dataset):
 
         img = self.images[idx]
         label = self.labels[idx]
-
         # Apply transforms
         if self.transform:
-            img_transpose = np.transpose(
-                img, (1, 2, 0)
-            )  # Transform np array to the format H x W x C
-            img = self.transform(img_transpose)
+            img = img.transpose(1, 2, 0)
+            img = self.transform(img)
 
         return img, label
 
@@ -121,9 +118,9 @@ def get_datasets(batch_size):
 
 # Some data exploration and visualization
 if __name__ == "__main__":
-    trainloader, testloader = get_datasets(batch_size)
+    trainloader, testloader = get_datasets(4)
 
-    it = iter(trainloader)
+    it = iter(testloader)
     data = next(it)
 
     fig, ax = plt.subplots()

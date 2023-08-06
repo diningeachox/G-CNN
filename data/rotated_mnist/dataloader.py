@@ -47,7 +47,7 @@ def load_mat_mnist_rotated(path):
             x.append(list(_image_))
             y.append(_class_)
 
-    return np.array(x), np.array(y)
+    return np.array(x), y
 
 
 class RMNISTDataset(Dataset):
@@ -62,8 +62,9 @@ class RMNISTDataset(Dataset):
         x, y = load_mat_mnist_rotated(data_file)  # Load data files
 
         self.images = x.reshape((-1, 1, 28, 28))
-        self.labels = y
+        self.labels = y  # convert labels to Long type
         self.transform = transform
+        print(self.images.shape)
 
     def __len__(self):
         return self.images.shape[0]
@@ -72,16 +73,9 @@ class RMNISTDataset(Dataset):
 
         img = self.images[idx]
         label = self.labels[idx]
-
-        print(img.shape)
         # Apply transforms
         if self.transform:
-            """
-            img_transpose = np.transpose(
-                img, (1, 2, 0)
-            )  # Transform np array to the format H x W x C
-            """
-            img = (255 * img).astype(np.uint8).transpose(1, 2, 0)
+            img = (255 * img).astype(np.float32).transpose(1, 2, 0)
             img = self.transform(img)
 
         return img, label
