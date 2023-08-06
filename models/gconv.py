@@ -28,15 +28,18 @@ def group_element(s, u, v, m=0):
 
 
 def group_element_inverse(matrix, rot=True):
-    if matrix[0][0] != 0:
-        angle = math.atan(matrix[1][0] / matrix[0][0]) / (math.pi / 2)
-        angle = (angle + 4) % 4
-    else:
+    topleft = matrix[0][0]
+    #Topleft equals 0
+    if torch.allclose(topleft, torch.tensor([0.]), atol=1e-06, rtol=1e-6):
         if matrix[1][0] > 0:
             angle = 1
         elif matrix[1][0] < 0:
             angle = 3
-    return (int(angle) if rot else 0, int(matrix[0][2]), int(matrix[1][2]))
+    elif matrix[0][0] < 0:
+        angle = 2
+    else:
+        angle = 0
+    return (angle if rot else 0, matrix[0][2].item(), matrix[1][2].item())
 
 
 # CUDA extension
@@ -292,7 +295,7 @@ class GConvFunctions(torch.autograd.Function):
             _s = ind1[s_prime, s, u, v].item()
             _u = ind2[s_prime, s, u, v].item()
             _v = ind3[s_prime, s, u, v].item()
-            filters_transformed[i * s_prime, j * s, u, v] = filters[i, j, _s, _u, _v]
+            filters_transformed[i * out_trans + s_prime,j * in_trans + s, u, v] = filters[i, j, _s, _u, _v]
 
         ctx.save_for_backward(input, filters, filters_transformed, ind1, ind2, ind3)
         return F.conv2d(input, filters_transformed, stride=stride, padding=padding)
@@ -429,43 +432,22 @@ class GConv2d(nn.Module):
         ):
             ref_prime = s_prime > 3
             ref = s > 3
-            '''
-            _s, _u, _v = group_element_inverse(
-                torch.inverse(group_element(s_prime, 0, 0, m=ref_prime))
-                * group_element(s, u, v, m=ref)
-            )
-            print(s_prime, s, u, v)
-            # print(_s, _u, _v)
-
-            print(torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)))
-            print(group_element(s, u, v, m=ref))
-            print(
-                group_element_inverse(
-                    torch.mm(
-                        torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)),
-                        group_element(s, u - half_x, v - half_y, m=ref),
-                    )
-                )
-            )
-            '''
-
+            #Calculate new indices
             new_coords = group_element_inverse(
                 torch.mm(
                     torch.inverse(group_element(s_prime, 0, 0, m=ref_prime)),
-                    group_element(s, u - half_x, -1 * (v - half_y), m=ref),
+                    #group_element(s, u - half_x, -1 * (v - half_y), m=ref),
+                    group_element(s, v - half_x, -1 * (u - half_y), m=ref),
                 ),
                 rot=(self.in_trans > 1)
             )
-            #print(new_coords[0], new_coords[1] + half_x, new_coords[2] + half_y)
             _s = new_coords[0]
-            _u = new_coords[1] + half_x
-            _v = -1 * new_coords[2] + half_y
+            _u = round(-1 * new_coords[2] + half_y)
+            _v = round(new_coords[1] + half_x)
 
-            # _s, _u, _v = gcnn_functions_cpp.calc_indices(s_prime, s, u, v, ref_prime, ref)
             self.ind1[s_prime, s, u, v] = _s
             self.ind2[s_prime, s, u, v] = _u
             self.ind3[s_prime, s, u, v] = _v
-        #print(self.in_trans, self.out_trans, self.filter_size)
 
     def forward(self, x):
         if self.device == "cpu":
