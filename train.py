@@ -54,9 +54,6 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
             loss.backward()
             opt.step()
 
-            # for p in model.parameters():
-            # print(p.norm())
-
             pred = torch.argmax(y, dim=1)
             accuracy = torch.sum((pred == label).float()).item()
             # running_metric += accuracy
@@ -78,5 +75,8 @@ if __name__ == "__main__":
     if args.model == "p4allcnn":
         trainloader, testloader = get_datasets(batch_size=4)
 
-        print("Beginning training...")
+        print("Beginning training on rotated CIFAR10...")
         train(trainloader, model_type=args.model, batch_size=4)
+    elif args.model == "p4cnn":
+        print("Beginning training on rotated MNIST...")
+        pass
