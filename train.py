@@ -28,7 +28,9 @@ def get_lr(opt):
         return param_group["lr"]
 
 
-def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
+def train(
+    data, test_data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device
+):
     if model_type == "p4allcnn":
         model = P4AllCNN(3, device=device).to(device)
     else:
@@ -63,7 +65,7 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
 
             print(
                 "Step: [{}/{}] time: {:.3f}s, Batch loss:{:.6f}, Batch accuracy:{}/{} ".format(
-                    idx,
+                    idx + 1,
                     len(data.dataset) // batch_size,
                     time() - step_time,
                     loss.item(),
@@ -71,6 +73,31 @@ def train(data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device):
                     batch_size,
                 )
             )
+        evaluate(test_data, model, device)
+
+
+def evaluate(data, model, device=device):
+    model.eval()
+    total_accuracy = 0
+
+    step_time = time()
+    with torch.no_grad():
+        for idx, (img, label) in enumerate(data):
+            img = img.to(device)
+            label = label.to(device)
+            y = model(img)
+
+            loss = nn.CrossEntropyLoss()(y, label)
+
+            pred = torch.argmax(y, dim=1)
+            total_accuracy += torch.sum((pred == label).float()).item()
+
+        total_accuracy /= len(data.dataset)
+    print(
+        "Time: {:.3f}s, Batch loss:{:.6f}, Accuracy:{:3f}% ".format(
+            time() - step_time, loss.item(), total_accuracy * 100.0
+        )
+    )
 
 
 if __name__ == "__main__":
@@ -78,8 +105,8 @@ if __name__ == "__main__":
     if args.model == "p4allcnn":
         trainloader, testloader = CIFAR10.get_datasets(batch_size=4)
         print("Beginning training on rotated CIFAR10...")
-        train(trainloader, model_type=args.model, batch_size=4)
+        train(trainloader, testloader, model_type=args.model, batch_size=4)
     elif args.model == "p4cnn":
-        trainloader, testloader = RMNIST.get_datasets(batch_size=8)
+        trainloader, testloader = RMNIST.get_datasets(batch_size=16)
         print("Beginning training on rotated MNIST...")
-        train(trainloader, model_type=args.model, batch_size=8)
+        train(trainloader, testloader, model_type=args.model, batch_size=16)
