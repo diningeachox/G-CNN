@@ -25,10 +25,12 @@ In the command line, use the following commands <br>
 
 These will install the corresponding C++/CUDA functions instead of the native pytorch functions used for forward() and backward() functions in the GCNN models.
 
-The main code is in `main.py`, where a P4CNN model is initialized and a sample input is passed through and backpropagated once. To run the code, use: <br>
-`py -m main` <br>
-To use CUDA accelerated forward() and backward(), use <br>
-`py -m main --gpu`
+The training code is in `train.py`. There are two models available currently:
+- P4CNN: used to train rotated MNIST
+- P4AllCNN: used to train (rotated) CIFAR10
+
+To start training, use the command
+`py train.py --model=p4cnn` or `py train.py --model=p4allcnn`
 
 # Task List
 * [x] Optimization using C++/CUDA
