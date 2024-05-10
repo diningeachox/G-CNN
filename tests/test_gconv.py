@@ -101,7 +101,3 @@ def test_equivariance():
 
     assert not torch.allclose(y, torch.zeros_like(y))
     assert not torch.allclose(y_rot_img, torch.zeros_like(y))
-
-
-def test_backward():
-    pass

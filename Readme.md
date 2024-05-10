@@ -39,7 +39,7 @@ To start training, use the command
 * [x] Optimization using C++/CUDA
 * [ ] Further GPU optimization with shared memory
 * [x] Dataloader with rotations and reflections support
-* [ ] Unit tests
+* [x] Unit tests
 * [x] Training scripts
 * [ ] Benchmark results
 * [ ] Visualizations
