@@ -50,7 +50,12 @@ def load_mat_mnist_rotated(path):
     return np.array(x), y
 
 
+
 class RMNISTDataset(Dataset):
+    train_mean = [0, 0, 0]
+    train_std = [0, 0, 0]
+    test_mean = [0, 0, 0]
+    test_std = [0, 0, 0]
     def __init__(self, train=True, transform=None, rot=True, ref=False):
         data_file = ""
         if train:
@@ -84,19 +89,26 @@ class RMNISTDataset(Dataset):
 def get_datasets(batch_size):
     mean = [0.5, 0.5, 0.5]
     std = [0.5, 0.5, 0.5]
+    train_x, train_y = load_mat_mnist_rotated("data/rotated_mnist/mnist_all_rotation_normalized_float_train_valid.amat")
+    RMNISTDataset.train_mean = np.repeat(np.mean(train_x), 3)
+    RMNISTDataset.train_std = np.repeat(np.std(train_x), 3)
+    test_x, test_y = load_mat_mnist_rotated("data/rotated_mnist/mnist_all_rotation_normalized_float_test.amat")
+    RMNISTDataset.test_mean = np.repeat(np.mean(test_x), 3)
+    RMNISTDataset.test_std = np.repeat(np.std(test_x), 3)
+
 
     # Transforms for data augmentation
     train_transforms = transforms.Compose(
         [
             # transforms.RandomCrop((h,w)),
             transforms.ToPILImage(),
-            transforms.RandomHorizontalFlip(p=0.5),
+            # transforms.RandomHorizontalFlip(p=0.5),
             # transforms.RandomAffine(degrees=90, translate=(0.0,0.0)),
             # transforms.RandomAffine(degrees=180, translate=(0.0,0.0)),
             # transforms.RandomAffine(degrees=270, translate=(0.0,0.0)),
             torchvision.transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std),
+            transforms.Normalize(RMNISTDataset.train_mean, RMNISTDataset.train_std),
         ]
     )
 
@@ -106,7 +118,7 @@ def get_datasets(batch_size):
             transforms.ToPILImage(),
             torchvision.transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
-            transforms.Normalize(mean, std),
+            transforms.Normalize(RMNISTDataset.test_mean, RMNISTDataset.test_std),
         ]
     )
     train_data = RMNISTDataset(train=True, transform=train_transforms)
@@ -115,7 +127,7 @@ def get_datasets(batch_size):
     trainloader = torch.utils.data.DataLoader(
         train_data, batch_size=batch_size, shuffle=True
     )
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=32, shuffle=False)
+    testloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
     return trainloader, testloader
 
 

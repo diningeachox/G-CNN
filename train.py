@@ -29,7 +29,7 @@ def get_lr(opt):
 
 
 def train(
-    data, test_data, model_type="p4cnn", num_epochs=10, batch_size=1, device=device
+    data, test_data, model_type="p4cnn", num_epochs=100, batch_size=1, device=device
 ):
     if model_type == "p4allcnn":
         model = P4AllCNN(3, device=device).to(device)
@@ -64,7 +64,9 @@ def train(
             # running_metric += accuracy
 
             print(
-                "Step: [{}/{}] time: {:.3f}s, Batch loss:{:.6f}, Batch accuracy:{}/{} ".format(
+                "Epoch {}/{} - Step: [{}/{}] time: {:.3f}s, Batch loss:{:.6f}, Batch accuracy:{}/{} ".format(
+                    epoch, 
+                    num_epochs - 1,
                     idx + 1,
                     len(data.dataset) // batch_size,
                     time() - step_time,
@@ -73,7 +75,10 @@ def train(
                     batch_size,
                 )
             )
-        evaluate(test_data, model, device)
+
+        #Evaluate every 10 epochs
+        if epoch % 10 == 9:
+            evaluate(test_data, model, device)
 
 
 def evaluate(data, model, device=device):

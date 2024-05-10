@@ -7,6 +7,8 @@ of interest, namely:<br>
 p4 (translations and rotations of 90 degrees)<br>
 p4m (translations and rotations of 90 degrees + reflections)<br>
 
+There are a lot of similarities with Cohen and Welling's original implementation [here](https://github.com/tscohen/GrouPy). The main differences are that Cohen and Welling used Tensorflow and CuPy for GPU acceleration, whereas I used Pytorch and Libtorch for extensions with CUDA kernels.
+
 # Requirements
 python >= 3.7<br>
 numpy<br>
@@ -15,6 +17,7 @@ CUDA 11.3 (CUDA 11.6 doesn't currently work with the GPU kernels)<br>
 libtorch<br>
 scikit-image <br>
 scikit-learn <br>
+Microsoft Visual Studio (for Windows users) <br>
 
 # Usage
 Before running the code it is **highly recommended** to install the C++/CUDA optimization modules. (Otherwise it may be very slow!)

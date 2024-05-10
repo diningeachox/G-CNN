@@ -76,8 +76,7 @@ __global__ void gcnn_cuda_backward_kernel(
                       int _s = ind1[s_prime][s][u][v];
                       int _u = ind2[s_prime][s][u][v];
                       int _v = ind3[s_prime][s][u][v];
-                      __syncthreads(); //Stop race conditions
-                      grad_filters[row][col][_s][_u][_v] += grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v];
+                      atomicAdd(&grad_filters[row][col][_s][_u][_v], grad_filters_trans[row * out_trans + s_prime][col * in_trans + s][u][v]);
                   }
               }
           }
